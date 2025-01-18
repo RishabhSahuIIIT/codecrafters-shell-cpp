@@ -34,6 +34,7 @@ int main() {
       ss>>arg1>>arg2;
       bool flag=false;
       string paths=string(getenv("PATH"));
+      
         stringstream tokenizer(paths);
         string token;
         vector<string>pathVars;
@@ -82,6 +83,7 @@ int main() {
         	//check if executable exists under this path string
           //filesystem::exists()
         //}
+        cout<<paths;
         cout<<arg2<<" is "<<detectedPathString<<"\n";
       }
       else
