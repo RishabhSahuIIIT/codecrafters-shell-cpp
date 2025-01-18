@@ -62,6 +62,7 @@ int main() {
             if(filesystem::exists(pth))
             {
               detectedPathString=totalPath;
+              break;
             }
             
 
