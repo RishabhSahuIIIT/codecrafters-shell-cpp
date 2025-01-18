@@ -37,6 +37,12 @@ int main() {
         stringstream tokenizer(paths);
         string token;
         vector<string>pathVars;
+        string detectedPathString;
+        //parse the path variable into a vector of strings,
+        
+            //set flag and break the loop if condition met
+            //check flag and output at the end accordingly
+
         while(getline(tokenizer,token,':'))
         {
           pathVars.push_back(token);
@@ -50,12 +56,12 @@ int main() {
             filesystem::path pth(totalPath);
             
 
-            //parse the path variable into a vector of strings,
-        
-            //set flag and break the loop if condition met
-            //check flag and output at the end accordingly
-
+            
             flag=flag | (filesystem::exists(pth))    ;
+            if(filesystem::exists(pth))
+            {
+              detectedPathString=totalPath;
+            }
             
 
         }
@@ -68,6 +74,15 @@ int main() {
       else if(flag) //check if command is present in any of the directories of the path variable
       {
         
+			
+		
+        //check for executable in ea
+        //for(string st:pathVars)
+        //{
+        	//check if executable exists under this path string
+          //filesystem::exists()
+        //}
+        cout<<arg1<<" is "<<detectedPathString<<"\n";
       }
       else
       {
