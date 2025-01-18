@@ -82,7 +82,7 @@ int main() {
         	//check if executable exists under this path string
           //filesystem::exists()
         //}
-        cout<<arg1<<" is "<<detectedPathString<<"\n";
+        cout<<arg2<<" is "<<detectedPathString<<"\n";
       }
       else
       {
