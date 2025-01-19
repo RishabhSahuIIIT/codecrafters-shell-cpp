@@ -10,7 +10,7 @@ using namespace std;
 void executeCommand(string mainCommand,vector<string>argList)
 {
   int sz=argList.size();
-  char * const  argListC[argList.size()]= (char*)malloc(sizeof(char*)*sz);
+  char * const *  argListC = (char* const *)malloc(sizeof(char* const )*sz);
   int pos=0;
   for(string arg:argList)
   {
