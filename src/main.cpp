@@ -4,6 +4,7 @@
 #include<cstring>
 #include<vector>
 #include<filesystem>
+#include <sys/wait.h>
 
 #include<unistd.h>
 using namespace std;
@@ -24,7 +25,8 @@ void executeCommand(string mainCommand,vector<string>argList)
   }
   else if (processPid>0) //parent
   {
-
+    int status;
+    waitpid(processPid, &status, 0);
     return ;
   }
   else // process pid ==-1 or error
