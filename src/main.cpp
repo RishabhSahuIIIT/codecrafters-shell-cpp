@@ -4,7 +4,38 @@
 #include<cstring>
 #include<vector>
 #include<filesystem>
+
+#include<unistd.h>
 using namespace std;
+void executeCommand(string mainCommand,vector<string>argList)
+{
+  int sz=argList.size();
+  char * const  argListC[argList.size()]= (char*)malloc(sizeof(char*)*sz);
+  int pos=0;
+  for(string arg:argList)
+  {
+    strcpy(argListC[pos],arg.c_str());
+    pos++;
+  }
+  int processPid= fork();
+  if(processPid==0)//child
+  { 
+    execvp(mainCommand.c_str(),argListC);
+  }
+  else if (processPid>0) //parent
+  {
+
+    return ;
+  }
+  else // process pid ==-1 or error
+  {
+    cout<<"Error";
+  }
+
+  //option1 : use location of command and execute as a normal program
+  //option2: use command name without location ,executing as a shell command
+
+}
 int main() {
   // Flush after every std::cout / std:cerr
   cout << std::unitbuf;
@@ -24,7 +55,7 @@ int main() {
     { 
       cout<<input.substr(5,input.size()-5)<<"\n";
     }
-    else if(input.substr(0,4)=="type")
+    else
     {
       stringstream ss;
        string arg1;
@@ -67,39 +98,44 @@ int main() {
             
 
         }
-        
-      if(arg2=="echo" or arg2=="exit" or arg2=="type")
-      {
-        cout<<arg2<<" is a shell builtin\n";
 
-      }
-      else if(flag) //check if command is present in any of the directories of the path variable
-      {
-        
-			
-		
-        //check for executable in ea
-        //for(string st:pathVars)
-        //{
-        	//check if executable exists under this path string
-          //filesystem::exists()
-        //}
-        //cout<<paths;
-        cout<<arg2<<" is "<<detectedPathString<<"\n";
-      }
-      else
-      {
-        cout<<arg2<<": not found\n";
-      }
+        if(flag==false)
+        {
+          cout<<input<<": command not found\n";
+        }
+        else if(input.substr(0,4)=="type")
+        {
+          if(arg2=="echo" or arg2=="exit" or arg2=="type")
+          {
+            cout<<arg2<<" is a shell builtin\n";
 
-    }
-    else
-    {
-      cout<<input<<": command not found\n";
-    }
+          }
+          else if(flag)
+          {
+  
+              cout<<arg2<<" is "<<detectedPathString<<"\n";
+          }
+          else
+          {
+            cout<<arg2<<": not found\n";
+          }
+        }    
+        else // command detected in path and needs to be executed from argument list
+        {
+          vector<string> argumentsList;
+          argumentsList.push_back(arg2);//arguments list apart from the main command
+          string par;
+          while(!ss.eof())
+          {
+            ss>>par;
+            argumentsList.push_back(par);
+          }
+          executeCommand(arg1,argumentsList);
+        }
     
 
     
     
   }
+}
 }
