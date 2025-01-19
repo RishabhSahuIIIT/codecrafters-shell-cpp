@@ -87,12 +87,11 @@ int main() {
             string totalPath= pathFolder+'/'+arg2;
             filesystem::path pth(totalPath);
             
-
-            
             flag=flag | (filesystem::exists(pth))    ;
             if(filesystem::exists(pth))
             {
               detectedPathString=totalPath;
+              cout<<"found"<<input;
               break;
             }
             
