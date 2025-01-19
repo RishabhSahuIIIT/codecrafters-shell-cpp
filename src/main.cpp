@@ -84,14 +84,19 @@ int main() {
         //search executable iterated in a loop over path strings
         for(string pathFolder :pathVars )
         {
-            string totalPath= pathFolder+'/'+arg2;
+            string totalPath;
+            if(arg1=="type")
+              totalPath= pathFolder+'/'+arg2;
+            else
+              totalPath= pathFolder+'/'+arg1;
+            
             filesystem::path pth(totalPath);
             
             flag=flag | (filesystem::exists(pth))    ;
             if(filesystem::exists(pth))
             {
               detectedPathString=totalPath;
-              cout<<"found"<<input;
+              
               break;
             }
             
