@@ -106,14 +106,13 @@ int main() {
       
       if(input.substr(0,4)=="type")
       {
-        if(arg2=="echo" or arg2=="exit" or arg2=="type")
+        if(arg2=="echo" or arg2=="exit" or arg2=="type" or arg2=="pwd")
         {
           cout<<arg2<<" is a shell builtin\n";
 
         }
         else if(flag)
         {
-
             cout<<arg2<<" is "<<detectedPathString<<"\n";
         }
         else
