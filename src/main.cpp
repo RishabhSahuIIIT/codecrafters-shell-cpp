@@ -23,12 +23,14 @@ void executeCommand(string mainCommand,vector<string>argList)
   { 
     cout<<"childProcessStarted\n";
     execvp(mainCommand.c_str(),argListC);
+    perror("error");
     
   }
   else if (processPid>0) //parent
   {
     int status;
     waitpid(processPid, &status, 0);
+    perror("error");
     cout<<status;
   }
   else // process pid ==-1 or error
