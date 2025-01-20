@@ -116,7 +116,7 @@ int main() {
 
         if(flag==false)
         {
-          cout<<input<<": command not found\n";
+          cout<<arg2<<": command not found\n";
         }
         else if(input.substr(0,4)=="type")
         {
