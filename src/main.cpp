@@ -56,7 +56,7 @@ int main() {
     {
       
       char * cStyleDirectory;
-      getcwd(cStyleDirectory,0);
+      getcwd(cStyleDirectory,100);
       string directory(cStyleDirectory);
       cout<<directory;
     }
