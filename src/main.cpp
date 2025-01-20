@@ -55,9 +55,9 @@ int main() {
     else if(input.substr(0,3)=="pwd")
     {
       
-      char * cStyleDirectory;
-      getcwd(cStyleDirectory,100);
-      string directory(cStyleDirectory);
+      
+      
+      string directory(get_current_dir_name());
       cout<<directory;
     }
     else
