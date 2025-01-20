@@ -114,11 +114,8 @@ int main() {
 
         }
 
-        if(flag==false)
-        {
-          cout<<arg2<<": command not found\n";
-        }
-        else if(input.substr(0,4)=="type")
+        
+        if(input.substr(0,4)=="type")
         {
           if(arg2=="echo" or arg2=="exit" or arg2=="type")
           {
@@ -134,7 +131,11 @@ int main() {
           {
             cout<<arg2<<": not found\n";
           }
-        }    
+        }   
+        else if(flag==false)
+        {
+          cout<<input<<": command not found\n";
+        } 
         else // command detected in path and needs to be executed from argument list
         {
           
