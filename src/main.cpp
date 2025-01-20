@@ -136,6 +136,7 @@ int main() {
         {
           
           vector<string> argumentsList;
+          cout<<arg2;
           argumentsList.push_back(arg2);//arguments list apart from the main command
           string par;
           while(!ss.eof())
