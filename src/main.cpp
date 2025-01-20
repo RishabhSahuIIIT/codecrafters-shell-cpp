@@ -28,7 +28,7 @@ void executeCommand(string mainCommand,vector<const char*>argList)
   { 
     
     cout<<mainCommand;
-    execvp(mainCommand.c_str(),(char* const*)argList.data())
+    execvp(mainCommand.c_str(),(char* const*)argList.data());
     
   }
   else if (processPid>0) //parent
