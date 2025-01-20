@@ -55,9 +55,28 @@ int main() {
       {
         string quotedText= input.substr(6,input.size()-7);
         cout<<quotedText<<"\n";
+        
       }
       else
-        cout<<input.substr(5,input.size()-5)<<"\n";
+      {
+
+        stringstream ss;
+        string arg1;
+        string arg2;
+        
+        ss<<input;
+        ss>>arg1>>arg2;
+        bool flag=false;
+        string par;
+        cout<<arg2;
+        while(!ss.eof())
+        {
+          ss>>par;
+          cout<<" "<<par;
+        }
+        cout<<"\n";
+
+      }
     }
     else if(input.substr(0,3)=="pwd")
     {
