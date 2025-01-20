@@ -19,7 +19,7 @@ void executeCommand(string mainCommand,vector<string>argList)
     pos++;
   }
   int processPid= fork();
-  cout<<mainCommand;
+  cerr<<mainCommand;
   if(processPid==0)//child
   { 
     cout<<"childProcessStarted\n";
