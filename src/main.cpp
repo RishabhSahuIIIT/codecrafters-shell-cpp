@@ -12,6 +12,7 @@ void executeCommand(string mainCommand,vector<char*const>argList)
 {
   
   int sz=argList.size();
+
   //char * const *  argListC = new char * const[sz+1]
   int pos=0;
   //for(string arg:argList)
@@ -27,7 +28,7 @@ void executeCommand(string mainCommand,vector<char*const>argList)
   if(processPid==0)//child
   { 
     
-    execvp(mainCommand.c_str(),(char* const*)argList.data());
+    execvp(mainCommand.c_str(),argList.data());
     
   }
   else if (processPid>0) //parent
