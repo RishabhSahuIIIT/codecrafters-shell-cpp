@@ -51,7 +51,7 @@ int main() {
     else if(input.substr(0,4)=="echo")// basic echo without command substitution
     { 
       //TODO :Manage single quotes
-      if(input[5]=='`')
+      if(input[5]=='\'')
       {
         string quotedText= input.substr(6,input.size()-7);
         cout<<quotedText<<"\n";
@@ -150,7 +150,7 @@ int main() {
       } 
       else if(arg1=="cat")//single quote support for cat
       {
-        if(arg2[0]=='`')
+        if(arg2[0]=='\'')
         {
           arg2=arg2.substr(1,arg2.size()-2);
         }
