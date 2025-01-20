@@ -10,7 +10,7 @@
 using namespace std;
 void executeCommand(string mainCommand,vector<string>argList)
 {
-  cout<<"why not printing?";
+  
   int sz=argList.size();
   char * const *  argListC = (char* const *)malloc(sizeof(char* const )*sz);
   int pos=0;
