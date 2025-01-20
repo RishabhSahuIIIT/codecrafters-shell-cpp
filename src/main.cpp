@@ -29,7 +29,7 @@ void executeCommand(string mainCommand,vector<string>argList)
   {
     int status;
     waitpid(processPid, &status, 0);
-    
+    cout<<status;
   }
   else // process pid ==-1 or error
   {
