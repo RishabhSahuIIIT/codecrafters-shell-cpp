@@ -140,6 +140,7 @@ int main() {
           
           vector<char*> argumentsList;
           //cout<<arg2; //printed name parameter 
+          argumentsList.push_back(const_cast<char*>(arg1.c_str()));
           argumentsList.push_back(const_cast<char*>(arg2.c_str()));//arguments list apart from the main command
           string par;
           while(!ss.eof())
