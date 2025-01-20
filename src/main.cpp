@@ -21,7 +21,9 @@ void executeCommand(string mainCommand,vector<string>argList)
   int processPid= fork();
   if(processPid==0)//child
   { 
+    cout<<"childProcessStarted\n";
     execvp(mainCommand.c_str(),argListC);
+    
   }
   else if (processPid>0) //parent
   {
