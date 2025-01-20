@@ -58,7 +58,7 @@ int main() {
       
       
       string directory(get_current_dir_name());
-      cout<<directory;
+      cout<<directory<<"\n";
     }
     else
     {
