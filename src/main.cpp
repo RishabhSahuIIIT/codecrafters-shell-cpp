@@ -54,8 +54,10 @@ int main() {
     }
     else if(input.substr(0,3)=="pwd")
     {
-      string directory;
-      getcwd(directory.data(),0);
+      
+      char * cStyleDirectory;
+      getcwd(cStyleDirectory,0);
+      string directory(cStyleDirectory);
       cout<<directory;
     }
     else
