@@ -145,10 +145,12 @@ int main() {
           }
           executeCommand(arg1,argumentsList);
         }
-    
+    cout<<"another output\n";
 
     
     
   }
+  cout<<"yet another output\n";
 }
+cout<<"yet another yet another output\n";
 }
