@@ -54,12 +54,10 @@ int main() {
     }
     else if(input.substr(0,3)=="pwd")
     {
-      
-      
-      
       string directory(get_current_dir_name());
       cout<<directory<<"\n";
     }
+    
     else
     {
       stringstream ss;
@@ -121,12 +119,20 @@ int main() {
         {
           cout<<arg2<<": not found\n";
         }
-      }   
+      } 
+      else if(input.substr(0,2)=="cd")
+      {
+        int errorCode=chdir(arg2.c_str());
+        if(errorCode<0)
+        {
+          cout<<"cd: "<<arg2<<": No such file or directory\n";
+        }
+      }  
       else if(flag==false)
       {
         cout<<input<<": command not found\n";
       } 
-      else // command detected in path and needs to be executed from argument list
+      else // external command detected in path and needs to be executed from argument list
       {
         
         vector<char*> argumentsList;
