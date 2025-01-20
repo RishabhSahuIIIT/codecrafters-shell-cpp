@@ -27,7 +27,6 @@ void executeCommand(string mainCommand,vector<const char*>argList)
   if(processPid==0)//child
   { 
     
-    cout<<mainCommand;
     execvp(mainCommand.c_str(),(char* const*)argList.data());
     
   }
@@ -145,17 +144,16 @@ int main() {
           while(!ss.eof())
           {
             ss>>par;
-            //cout<<par; 
             argumentsList.push_back(par.c_str());
           }
           executeCommand(arg1,argumentsList);
         }
-    cout<<"another output\n";
+    //cout<<"another output\n";
 
     
     
   }
-  cout<<"yet another output\n";
+  //cout<<"yet another output\n";
 }
-cout<<"yet another yet another output\n";
+//cout<<"yet another yet another output\n";
 }
