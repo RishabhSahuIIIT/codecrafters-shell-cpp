@@ -144,7 +144,7 @@ int main() {
           while(!ss.eof())
           {
             ss>>par;
-            argumentsList.push_back(char * const )par.c_str());
+            argumentsList.push_back((char * const )par.c_str());
           }
           executeCommand(arg1,argumentsList);
         }
