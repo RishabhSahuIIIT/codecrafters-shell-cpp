@@ -19,9 +19,11 @@ void executeCommand(string mainCommand,vector<string>argList)
     pos++;
   }
   int processPid= fork();
+  cout<<mainCommand;
   if(processPid==0)//child
   { 
     cout<<"childProcessStarted\n";
+    cout<<mainCommand;
     execvp(mainCommand.c_str(),argListC);
     perror("error");
     
