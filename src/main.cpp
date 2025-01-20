@@ -10,12 +10,14 @@
 using namespace std;
 void executeCommand(string mainCommand,vector<string>argList)
 {
+  cout<<"why not printing?";
   int sz=argList.size();
   char * const *  argListC = (char* const *)malloc(sizeof(char* const )*sz);
   int pos=0;
   for(string arg:argList)
   {
     strcpy(argListC[pos],arg.c_str());
+    cout<<argListC[pos];
     pos++;
   }
   int processPid= fork();
@@ -136,13 +138,13 @@ int main() {
         {
           
           vector<string> argumentsList;
-          cout<<arg2;
+          //cout<<arg2; //printed name parameter 
           argumentsList.push_back(arg2);//arguments list apart from the main command
           string par;
           while(!ss.eof())
           {
             ss>>par;
-            cout<<par;
+            //cout<<par; 
             argumentsList.push_back(par);
           }
           executeCommand(arg1,argumentsList);
