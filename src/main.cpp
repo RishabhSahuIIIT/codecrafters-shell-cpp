@@ -50,7 +50,14 @@ int main() {
     }
     else if(input.substr(0,4)=="echo")// basic echo without command substitution
     { 
-      cout<<input.substr(5,input.size()-5)<<"\n";
+      //TODO :Manage single quotes
+      if(input[5]=='`')
+      {
+        string quotedText= input.substr(6,input.size()-7);
+        cout<<quotedText<<"\n";
+      }
+      else
+        cout<<input.substr(5,input.size()-5)<<"\n";
     }
     else if(input.substr(0,3)=="pwd")
     {
@@ -141,6 +148,25 @@ int main() {
       {
         cout<<input<<": command not found\n";
       } 
+      else if(arg1=="cat")//single quote support for cat
+      {
+        if(arg2[0]=='`')
+        {
+          arg2=arg2.substr(1,arg2.size()-2);
+        }
+        string par;
+        vector<char*> argumentsList;
+        while(!ss.eof())
+        {
+          ss>>par;
+          if(par[0]=='`')
+          {
+            par=par.substr(1,par.size()-2);
+          }
+          argumentsList.push_back(const_cast<char*>(par.c_str()));
+        }
+        executeCommand(arg1,argumentsList);
+      }
       else // external command detected in path and needs to be executed from argument list
       {
         
