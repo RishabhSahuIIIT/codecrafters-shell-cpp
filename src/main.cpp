@@ -16,6 +16,7 @@ void executeCommand(string mainCommand,vector<string>argList)
   int pos=0;
   for(string arg:argList)
   {
+    cout<<arg.c_str();
     strcpy(argListC[pos],arg.c_str());
     cout<<argListC[pos];
     pos++;
