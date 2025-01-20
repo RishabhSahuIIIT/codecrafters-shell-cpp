@@ -8,35 +8,35 @@
 
 #include<unistd.h>
 using namespace std;
-void executeCommand(string mainCommand,vector<string>argList)
+void executeCommand(string mainCommand,vector<const char*>argList)
 {
   
   int sz=argList.size();
-  char * const *  argListC = (char* const *)malloc(sizeof(char* const )*sz);
+  //char * const *  argListC = new char * const[sz+1]
   int pos=0;
-  for(string arg:argList)
-  {
-    cout<<arg.c_str();
-    strcpy(argListC[pos],arg.c_str());
-    cout<<argListC[pos];
-    pos++;
-  }
+  //for(string arg:argList)
+  //{
+    //cout<<arg.c_str();
+    //argListC[pos] = (char*)malloc(arg.length() + 1);
+    //strcpy(argListC[pos],arg.c_str());
+    //cout<<argListC[pos];
+    //pos++;
+  //}
   int processPid= fork();
-  cerr<<mainCommand;
+  //cerr<<mainCommand;
   if(processPid==0)//child
   { 
-    cout<<"childProcessStarted\n";
+    
     cout<<mainCommand;
-    execvp(mainCommand.c_str(),argListC);
-    perror("error");
+    execvp(mainCommand.c_str(),(char* const*)argList.data())
     
   }
   else if (processPid>0) //parent
   {
     int status;
     waitpid(processPid, &status, 0);
-    perror("error");
-    cout<<status;
+    
+    
   }
   else // process pid ==-1 or error
   {
@@ -138,15 +138,15 @@ int main() {
         else // command detected in path and needs to be executed from argument list
         {
           
-          vector<string> argumentsList;
+          vector<const char*> argumentsList;
           //cout<<arg2; //printed name parameter 
-          argumentsList.push_back(arg2);//arguments list apart from the main command
+          argumentsList.push_back(arg2.c_str());//arguments list apart from the main command
           string par;
           while(!ss.eof())
           {
             ss>>par;
             //cout<<par; 
-            argumentsList.push_back(par);
+            argumentsList.push_back(par.c_str());
           }
           executeCommand(arg1,argumentsList);
         }
