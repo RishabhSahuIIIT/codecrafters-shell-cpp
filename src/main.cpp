@@ -8,7 +8,7 @@
 
 #include<unistd.h>
 using namespace std;
-void executeCommand(string mainCommand,vector<const char*>argList)
+void executeCommand(string mainCommand,vector<char*const>argList)
 {
   
   int sz=argList.size();
@@ -137,14 +137,14 @@ int main() {
         else // command detected in path and needs to be executed from argument list
         {
           
-          vector<const char*> argumentsList;
+          vector<char* const> argumentsList;
           //cout<<arg2; //printed name parameter 
-          argumentsList.push_back(arg2.c_str());//arguments list apart from the main command
+          argumentsList.push_back((char * const )arg2.c_str());//arguments list apart from the main command
           string par;
           while(!ss.eof())
           {
             ss>>par;
-            argumentsList.push_back(par.c_str());
+            argumentsList.push_back(char * const )par.c_str());
           }
           executeCommand(arg1,argumentsList);
         }
