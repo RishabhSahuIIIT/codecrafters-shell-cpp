@@ -68,7 +68,6 @@ int main() {
       ss>>arg1>>arg2;
       bool flag=false;
       string paths=string(getenv("PATH"));
-      
       stringstream tokenizer(paths);
       string token;
       vector<string>pathVars;
@@ -122,7 +121,17 @@ int main() {
       } 
       else if(input.substr(0,2)=="cd")
       {
-        int errorCode=chdir(arg2.c_str());
+        int errorCode;
+        if(arg2=="~")
+        {
+          string pathString= string(getenv("HOME"));
+          errorCode=chdir(pathString.c_str());
+        }
+        else
+        {
+          errorCode=chdir(arg2.c_str());
+        }
+        
         if(errorCode<0)
         {
           cout<<"cd: "<<arg2<<": No such file or directory\n";
@@ -148,9 +157,6 @@ int main() {
         executeCommand(arg1,argumentsList);
       }
   
-
-    
-    
   }
   //cout<<"yet another output\n";
 }
