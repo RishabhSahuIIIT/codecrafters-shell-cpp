@@ -14,50 +14,70 @@ vector<string> getSpecialArg(string argString)
   int sz=argString.size();
   vector<string>unquotedArgs;
   bool quoteStart=false;
-  int lastQuoteStart=-1;
+  int lastQuoteStart=0;
   string newArg;
   bool spaceStart=true;
-  int lastWordStart=-1;
+  int lastWordStart=0;
   for( int pos=0;pos<sz;pos++)
   {
-    if(quoteStart==false and  argString[pos]=='\'')
-    {
-      quoteStart=true;
-      lastQuoteStart=pos;
-      spaceStart=false;
-    }
-    else if (quoteStart ==true and argString[pos]=='\'')
+    //cases of quote
+    
+    if (quoteStart ==true and argString[pos]=='\'')
     {
       //extra pos-1 and lastQuoteStart+1 to remove quotes
       newArg=argString.substr(lastQuoteStart+1,((pos-1)-(lastQuoteStart+1)+1));
       quoteStart=false;
-      unquotedArgs.push_back(newArg);
+      unquotedArgs.push_back(newArg);  
       
     } 
+    else if(quoteStart==true and argString[pos]!='\'' )
+    {
+      continue;
+      
+    }
+    //cases without quote
     else if(quoteStart==false )
     {
-      if(spaceStart==false and argString[pos]==' ' )
+      if(quoteStart==false and  argString[pos]=='\'')
       {
+        quoteStart=true;
+        lastQuoteStart=pos;
+        spaceStart=false;
+        
+        if(spaceStart==true)
+        {
+          newArg=argString.substr(lastWordStart,((pos-2)-lastWordStart+1));
+          unquotedArgs.push_back(newArg);
+          spaceStart=false;
+          
+        }
+      }
+      else if( argString[pos]==' ' and spaceStart==false )
+      {
+        
         continue;
       }
-      else if(argString[pos]!='\'' and spaceStart!=true)
+      else if(argString[pos]==' ' and spaceStart==true )
+      {
+        newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
+        unquotedArgs.push_back(newArg);
+        spaceStart=false;
+          
+      }
+      
+      else if(argString[pos]!=' ' and spaceStart==false)// not a space and not a quote
       {
         lastWordStart=pos;
         spaceStart=true;
+        
       }
-      else if (argString[pos]!=' ' and spaceStart==true)
-      {
-        newArg=argString.substr(lastWordStart,(pos-lastWordStart+1));
-        unquotedArgs.push_back(newArg);
-        spaceStart=false;
-        if(argString[pos]=='\'')
-        {
-          quoteStart=true;
-          lastQuoteStart=pos;
-          spaceStart=false;
-        }
-      }
+      
     }
+  }
+  if(argString[sz-1]!='\'' and argString[sz-1]!=' ')
+  {
+    newArg=argString.substr(lastWordStart,((sz-1)-lastWordStart+1));
+    unquotedArgs.push_back(newArg);
   }
   return unquotedArgs;
 }
@@ -105,10 +125,11 @@ int main() {
     { 
       //TODO :Manage single quotes
       string argString=input.substr(5);
-      //cout<<argString;
+      //cout<<"("<<argString<<")";
       vector <string> unquotedArgs= getSpecialArg(argString);
       for(string wd:unquotedArgs)
       {
+        //cout<<"("<<wd<<") ";
         cout<<wd<<" ";
       }
       cout<<"\n";
