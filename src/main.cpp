@@ -106,6 +106,11 @@ int main() {
       //TODO :Manage single quotes
       string argString=input.substr(5);
       vector <string> unquotedArgs= getSpecialArg(argString);
+      for(string wd:unquotedArgs)
+      {
+        cout<<wd<<" ";
+      }
+      cout<<"\n";
     }
     else if(input.substr(0,3)=="pwd")
     {
@@ -198,22 +203,14 @@ int main() {
       } 
       else if(arg1=="cat")//single quote support for cat
       {
-        if(arg2[0]=='\'')
+        string argString=input.substr(4);
+        vector <string> unquotedArgs= getSpecialArg(argString);
+        vector<char* >charArgs;
+        for(string wd:unquotedArgs)
         {
-          arg2=arg2.substr(1,arg2.size()-2);
+          charArgs.push_back(const_cast<char*>(wd.c_str()));
         }
-        string par;
-        vector<char*> argumentsList;
-        while(!ss.eof())
-        {
-          ss>>par;
-          if(par[0]=='`')
-          {
-            par=par.substr(1,par.size()-2);
-          }
-          argumentsList.push_back(const_cast<char*>(par.c_str()));
-        }
-        executeCommand(arg1,argumentsList);
+         executeCommand(arg1,charArgs);
       }
       else // external command detected in path and needs to be executed from argument list
       {
