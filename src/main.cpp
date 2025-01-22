@@ -266,6 +266,9 @@ int main() {
         {
           charArgs.push_back(const_cast<char*>(wd.c_str()));
         }
+         //cat '/tmp/qux/f   38' '/tmp/qux/f   78' '/tmp/qux/f   49'
+         char* sample[]={"/tmp/qux/f   38", "/tmp/qux/f   78" ,"/tmp/qux/f   49"};
+        execvp("cat",sample);
          executeCommand(arg1,charArgs);
       }
       else // external command detected in path and needs to be executed from argument list
