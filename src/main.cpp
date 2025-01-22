@@ -8,6 +8,59 @@
 
 #include<unistd.h>
 using namespace std;
+// separate single quoted arguments
+vector<string> getSpecialArg(string argString)
+{
+  int sz=argString.size();
+  vector<string>unquotedArgs;
+  bool quoteStart=false;
+  int lastQuoteStart=-1;
+  string newArg;
+  bool spaceStart=true;
+  int lastWordStart=-1;
+  for( int pos=0;pos<sz;pos++)
+  {
+    if(quoteStart==false and  argString[pos]=='\'')
+    {
+      quoteStart=true;
+      lastQuoteStart=pos;
+      spaceStart=false;
+    }
+    else if (quoteStart ==true and argString[pos]=='\'')
+    {
+      //extra pos-1 and lastQuoteStart+1 to remove quotes
+      newArg=argString.substr(lastQuoteStart+1,((pos-1)-(lastQuoteStart+1)+1));
+      quoteStart=false;
+      unquotedArgs.push_back(newArg);
+      
+    } 
+    else
+    {
+      if(spaceStart==false and argString[pos]==' ' )
+      {
+        continue;
+      }
+      else if(argString[pos]!='\'' and spaceStart!=true)
+      {
+        lastWordStart=pos;
+        spaceStart=true;
+      }
+      else if (argString[pos]!=' ' and spaceStart==true)
+      {
+        newArg=argString.substr(lastWordStart,(pos-lastWordStart+1));
+        unquotedArgs.push_back(newArg);
+        spaceStart=false;
+        if(argString[pos]=='\'')
+        {
+          quoteStart=true;
+          lastQuoteStart=pos;
+          spaceStart=false;
+        }
+      }
+    }
+  }
+  return unquotedArgs;
+}
 void executeCommand(string mainCommand,vector<char*>argList)
 {
   
@@ -51,32 +104,8 @@ int main() {
     else if(input.substr(0,4)=="echo")// basic echo without command substitution
     { 
       //TODO :Manage single quotes
-      if(input[5]=='\'')
-      {
-        string quotedText= input.substr(6,input.size()-7);
-        cout<<quotedText<<"\n";
-        
-      }
-      else
-      {
-
-        stringstream ss;
-        string arg1;
-        string arg2;
-        
-        ss<<input;
-        ss>>arg1>>arg2;
-        bool flag=false;
-        string par;
-        cout<<arg2;
-        while(!ss.eof())
-        {
-          ss>>par;
-          cout<<" "<<par;
-        }
-        cout<<"\n";
-
-      }
+      string argString=input.substr(5);
+      vector <string> unquotedArgs= getSpecialArg(argString);
     }
     else if(input.substr(0,3)=="pwd")
     {
