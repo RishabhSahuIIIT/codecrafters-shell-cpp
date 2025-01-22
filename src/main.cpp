@@ -105,7 +105,7 @@ int main() {
     { 
       //TODO :Manage single quotes
       string argString=input.substr(5);
-      cout<<argString;
+      //cout<<argString;
       vector <string> unquotedArgs= getSpecialArg(argString);
       for(string wd:unquotedArgs)
       {
