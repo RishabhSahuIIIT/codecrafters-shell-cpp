@@ -3,6 +3,7 @@
 #include<sstream>
 #include<cstring>
 #include<vector>
+#include<set>
 #include<filesystem>
 #include <sys/wait.h>
 
@@ -18,16 +19,21 @@ vector<string> getSpecialArg(string argString)
   string newArg;
   bool spaceStart=true;
   int lastWordStart=0;
+  int argNum=0;
+  set<int>quotedNums;
   for( int pos=0;pos<sz;pos++)
   {
     //cases of quote
     
-    if (quoteStart ==true and argString[pos]=='\'')
+    if (quoteStart ==true and argString[pos]=='\'' )
     {
       //extra pos-1 and lastQuoteStart+1 to remove quotes
       newArg=argString.substr(lastQuoteStart+1,((pos-1)-(lastQuoteStart+1)+1));
       quoteStart=false;
       unquotedArgs.push_back(newArg);  
+      quotedNums.insert(argNum);
+      
+      argNum+=1;
       
     } 
     else if(quoteStart==true and argString[pos]!='\'' )
@@ -43,13 +49,17 @@ vector<string> getSpecialArg(string argString)
         quoteStart=true;
         lastQuoteStart=pos;
         spaceStart=false;
+        if(quotedNums.find(argNum-1)!=quotedNums.end() and argString[pos-1]!='\'')
+        {
+          quotedNums.erase(argNum-1);
+        }
         
         if(spaceStart==true)
         {
           newArg=argString.substr(lastWordStart,((pos-2)-lastWordStart+1));
           unquotedArgs.push_back(newArg);
           spaceStart=false;
-          
+          argNum+=1;
         }
       }
       else if( argString[pos]==' ' and spaceStart==false )
@@ -62,7 +72,7 @@ vector<string> getSpecialArg(string argString)
         newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
         unquotedArgs.push_back(newArg);
         spaceStart=false;
-          
+        argNum+=1;
       }
       
       else if(argString[pos]!=' ' and spaceStart==false)// not a space and not a quote
@@ -78,9 +88,32 @@ vector<string> getSpecialArg(string argString)
   {
     newArg=argString.substr(lastWordStart,((sz-1)-lastWordStart+1));
     unquotedArgs.push_back(newArg);
+    argNum+=1;
   }
-  
-  return unquotedArgs;
+  vector<string>quotedMerged;
+  int quotedargCount=unquotedArgs.size();
+  for(int agNum=0;agNum<quotedargCount;agNum++)
+  {
+    if(quotedNums.find(agNum)!=quotedNums.end())
+    {
+      
+      if(quotedNums.find(agNum+1)!=quotedNums.end())
+      {
+        unquotedArgs[agNum+1]=unquotedArgs[agNum]+unquotedArgs[agNum+1];
+      }
+      else
+      {
+        quotedMerged.push_back(unquotedArgs[agNum]);
+        
+      }
+    }
+    else
+    {
+      quotedMerged.push_back(unquotedArgs[agNum]);
+      
+    }
+  }
+  return quotedMerged;
 }
 void executeCommand(string mainCommand,vector<char*>argList)
 {
