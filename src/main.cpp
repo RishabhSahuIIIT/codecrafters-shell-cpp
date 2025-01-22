@@ -34,7 +34,7 @@ vector<string> getSpecialArg(string argString)
       unquotedArgs.push_back(newArg);
       
     } 
-    else
+    else if(quoteStart==)
     {
       if(spaceStart==false and argString[pos]==' ' )
       {
@@ -105,6 +105,7 @@ int main() {
     { 
       //TODO :Manage single quotes
       string argString=input.substr(5);
+      cout<<argString<<"\n";
       vector <string> unquotedArgs= getSpecialArg(argString);
       for(string wd:unquotedArgs)
       {
