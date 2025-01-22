@@ -74,11 +74,12 @@ vector<string> getSpecialArg(string argString)
       
     }
   }
-  if(argString[sz-1]!='\'' and argString[sz-1]!=' ')
+  if(argString[sz-1]!='\'' and argString[sz-1]!=' ' and spaceStart==true)
   {
     newArg=argString.substr(lastWordStart,((sz-1)-lastWordStart+1));
     unquotedArgs.push_back(newArg);
   }
+  
   return unquotedArgs;
 }
 void executeCommand(string mainCommand,vector<char*>argList)
