@@ -9,9 +9,11 @@
 
 #include<unistd.h>
 using namespace std;
+
 // separate single quoted arguments
 vector<string> getSpecialArg(string argString)
 {
+  
   int sz=argString.size();
   vector<string>unquotedArgs;
   bool quoteStart=false;
@@ -115,16 +117,23 @@ vector<string> getSpecialArg(string argString)
   }
   return quotedMerged;
 }
+
 void executeCommand(string mainCommand,vector<char*>argList)
 {
   
   int sz=argList.size();
-
   int pos=0;
   int processPid= fork();
   if(processPid==0)//child
-  { 
-    execvp(mainCommand.c_str(),argList.data());
+  {
+    //cout << "Executing: " << mainCommand << " with " << argList.size() << " arguments\n";
+    int result = execvp(mainCommand.c_str(), argList.data());
+    if(result<0)
+    {
+      cout<<"fail message in cout\n";
+      perror("fail with negative code\n");
+      exit(1);
+    } 
   }
   else if (processPid>0) //parent
   {
@@ -257,34 +266,22 @@ int main() {
       {
         cout<<input<<": command not found\n";
       } 
-      else if(arg1=="cat")//single quote support for cat
+      
+      else // external command including cat detected in path and needs to be executed from argument list
       {
-        string argString=input.substr(4);
+        int inputSz=input.size();
+        int ag1Size=arg1.size();
+        
+        string argString=input.substr(ag1Size+1);        
         vector <string> unquotedArgs= getSpecialArg(argString);
         vector<char* >charArgs;
-        for(string wd:unquotedArgs)
-        {
-          charArgs.push_back(const_cast<char*>(wd.c_str()));
+        charArgs.push_back(const_cast<char*>(arg1.c_str()));
+        for(const string &wd:unquotedArgs)
+        {   
+          charArgs.push_back(const_cast<char*>(wd.c_str())); 
         }
-         //cat '/tmp/qux/f   38' '/tmp/qux/f   78' '/tmp/qux/f   49'
-         char* sample[]={"/tmp/qux/f   38", "/tmp/qux/f   78" ,"/tmp/qux/f   49"};
-        execvp("cat",sample);
-         executeCommand(arg1,charArgs);
-      }
-      else // external command detected in path and needs to be executed from argument list
-      {
-        
-        vector<char*> argumentsList;
-        //cout<<arg2; //printed name parameter 
-        argumentsList.push_back(const_cast<char*>(arg1.c_str()));
-        argumentsList.push_back(const_cast<char*>(arg2.c_str()));//arguments list apart from the main command
-        string par;
-        while(!ss.eof())
-        {
-          ss>>par;
-          argumentsList.push_back(const_cast<char*>(par.c_str()));
-        }
-        executeCommand(arg1,argumentsList);
+        charArgs.push_back(nullptr);        
+        executeCommand(arg1,charArgs);
       }
   
   }
