@@ -16,77 +16,111 @@ vector<string> getSpecialArg(string argString)
   
   int sz=argString.size();
   vector<string>unquotedArgs;
-  bool quoteStart=false;
-  int lastQuoteStart=0;
+  bool singleQuoteStart=false;
+  int lastSingleQuoteStart=0;
   string newArg;
   bool spaceStart=true;
   int lastWordStart=0;
   int argNum=0;
   set<int>quotedNums;
+  
+  //special characters for double quotes  ‘$’, ‘`’, ‘"’, ‘\’, 
+  bool doubleQuoteStart=false;
+  int lastDoubleQuoteStart=0;
   for( int pos=0;pos<sz;pos++)
   {
     //cases of quote
-    
-    if (quoteStart ==true and argString[pos]=='\'' )
+    if( doubleQuoteStart==true and argString[pos]=='\\') //may delete this
     {
-      //extra pos-1 and lastQuoteStart+1 to remove quotes
-      newArg=argString.substr(lastQuoteStart+1,((pos-1)-(lastQuoteStart+1)+1));
-      quoteStart=false;
-      unquotedArgs.push_back(newArg);  
-      quotedNums.insert(argNum);
-      
-      argNum+=1;
-      
-    } 
-    else if(quoteStart==true and argString[pos]!='\'' )
+      if((pos+1<sz) and( argString[pos+1]== '\\'  or argString[pos+1]=='$' or argString[pos+1]=='`' or argString[pos+1]=='\"') )
+      {
+        argString.erase(pos);
+        sz=argString.size();
+      }
+    }
+    else if(doubleQuoteStart==true and argString[pos]=='\"')
+    {
+        newArg=argString.substr(lastDoubleQuoteStart+1,((pos-1)-(lastDoubleQuoteStart+1)+1));
+        doubleQuoteStart=false;
+        unquotedArgs.push_back(newArg);  
+        quotedNums.insert(argNum);
+        argNum+=1;
+    }
+    else if(doubleQuoteStart==true and argString[pos]!='\"')
     {
       continue;
-      
     }
-    //cases without quote
-    else if(quoteStart==false )
+    else if(doubleQuoteStart==false)
     {
-      if(quoteStart==false and  argString[pos]=='\'')
+      if(argString[pos]=='\"')
       {
-        quoteStart=true;
-        lastQuoteStart=pos;
+        doubleQuoteStart=true;
+        lastDoubleQuoteStart=pos;
         spaceStart=false;
-        if(quotedNums.find(argNum-1)!=quotedNums.end() and argString[pos-1]!='\'')
+        if(quotedNums.find(argNum-1)!=quotedNums.end() and argString[pos-1]!='\'' and argString[pos-1]!='\"')
         {
           quotedNums.erase(argNum-1);
         }
+
         
-        if(spaceStart==true)
+      }
+      else if (singleQuoteStart ==true and argString[pos]=='\'' )
+      {
+        //extra pos-1 and lastSingleQuoteStart+1 to remove quotes
+        newArg=argString.substr(lastSingleQuoteStart+1,((pos-1)-(lastSingleQuoteStart+1)+1));
+        singleQuoteStart=false;
+        unquotedArgs.push_back(newArg);  
+        quotedNums.insert(argNum);
+        argNum+=1;
+        
+      } 
+      else if(singleQuoteStart==true and argString[pos]!='\'' )
+      {
+        continue;
+      }
+      //cases without quote
+      else if(singleQuoteStart==false )
+      {
+        if(singleQuoteStart==false and  argString[pos]=='\'')
         {
-          newArg=argString.substr(lastWordStart,((pos-2)-lastWordStart+1));
+          singleQuoteStart=true;
+          lastSingleQuoteStart=pos;
+          spaceStart=false;
+          if(quotedNums.find(argNum-1)!=quotedNums.end() and argString[pos-1]!='\'' and argString[pos-1]!='\"')
+          {
+            quotedNums.erase(argNum-1);
+          }
+          
+          if(spaceStart==true)
+          {
+            newArg=argString.substr(lastWordStart,((pos-2)-lastWordStart+1));
+            unquotedArgs.push_back(newArg);
+            spaceStart=false;
+            argNum+=1;
+          }
+        }
+        else if( argString[pos]==' ' and spaceStart==false )
+        {
+          continue;
+        }
+        else if(argString[pos]==' ' and spaceStart==true )
+        {
+          newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
           unquotedArgs.push_back(newArg);
           spaceStart=false;
           argNum+=1;
         }
+        else if(argString[pos]!=' ' and spaceStart==false)// not a space and not a quote
+        {
+          lastWordStart=pos;
+          spaceStart=true;
+        }
       }
-      else if( argString[pos]==' ' and spaceStart==false )
-      {
-        
-        continue;
-      }
-      else if(argString[pos]==' ' and spaceStart==true )
-      {
-        newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
-        unquotedArgs.push_back(newArg);
-        spaceStart=false;
-        argNum+=1;
-      }
-      
-      else if(argString[pos]!=' ' and spaceStart==false)// not a space and not a quote
-      {
-        lastWordStart=pos;
-        spaceStart=true;
-        
-      }
-      
     }
   }
-  if(argString[sz-1]!='\'' and argString[sz-1]!=' ' and spaceStart==true)
+    
+    
+  if(argString[sz-1]!='\'' and argString[sz-1]!=' ' and argString[sz-1]!='\"' and spaceStart==true)
   {
     newArg=argString.substr(lastWordStart,((sz-1)-lastWordStart+1));
     unquotedArgs.push_back(newArg);
@@ -98,35 +132,31 @@ vector<string> getSpecialArg(string argString)
   {
     if(quotedNums.find(agNum)!=quotedNums.end())
     {
-      
       if(quotedNums.find(agNum+1)!=quotedNums.end())
       {
         unquotedArgs[agNum+1]=unquotedArgs[agNum]+unquotedArgs[agNum+1];
       }
       else
       {
-        quotedMerged.push_back(unquotedArgs[agNum]);
-        
+        quotedMerged.push_back(unquotedArgs[agNum]);        
       }
     }
+    
     else
     {
-      quotedMerged.push_back(unquotedArgs[agNum]);
-      
+      quotedMerged.push_back(unquotedArgs[agNum]);      
     }
   }
   return quotedMerged;
 }
 
 void executeCommand(string mainCommand,vector<char*>argList)
-{
-  
+{  
   int sz=argList.size();
   int pos=0;
   int processPid= fork();
   if(processPid==0)//child
   {
-    //cout << "Executing: " << mainCommand << " with " << argList.size() << " arguments\n";
     int result = execvp(mainCommand.c_str(), argList.data());
     if(result<0)
     {
