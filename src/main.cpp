@@ -81,7 +81,31 @@ vector<string> getSpecialArg(string argString)
       //cases without quote
       else if(singleQuoteStart==false )
       {
-        if(singleQuoteStart==false and  argString[pos]=='\'')
+        if(singleQuoteStart==false  and argString[pos]=='\\')// backslash outside any quotes
+        {
+          if(pos-1>=0 and argString[pos-1]!=' ')
+          {
+            argString.erase(pos,1);
+            sz=argString.size();
+            newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
+            unquotedArgs.push_back(newArg);
+            argNum+=1;
+            
+          }
+          else if(pos+1<sz and argString[pos+1]==' ') // if previous was space then the word preceding is already stored
+          {
+            //newArg=argString.substr(pos+1,1);
+            newArg="";//modification suited for echo command, until some situation requires passing space as arguments 
+            //to path functions
+            lastWordStart=pos+2;
+            unquotedArgs.push_back(newArg);
+            argNum+=1;
+            spaceStart=true;
+            pos+=1;
+          }
+          
+        }
+        else if(singleQuoteStart==false and  argString[pos]=='\'')
         {
           singleQuoteStart=true;
           lastSingleQuoteStart=pos;
