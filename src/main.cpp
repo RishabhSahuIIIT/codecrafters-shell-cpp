@@ -6,7 +6,6 @@
 #include<set>
 #include<filesystem>
 #include <sys/wait.h>
-
 #include<unistd.h>
 using namespace std;
 
@@ -15,6 +14,11 @@ vector<string> getSpecialArg(string argString)
 {
   
   int sz=argString.size();
+  //Option1: detect escapes and insert double quotes instead
+  //option2: deal with argument string characterwise but don't separate into arguments just now
+  //option2 will not make significant difference
+
+
   vector<string>unquotedArgs;
   bool singleQuoteStart=false;
   int lastSingleQuoteStart=0;
@@ -81,7 +85,7 @@ vector<string> getSpecialArg(string argString)
       //cases without quote
       else if(singleQuoteStart==false )
       {
-        if(singleQuoteStart==false  and argString[pos]=='\\')// backslash outside any quotes
+        if(argString[pos]=='\\')// backslash outside any quotes
         {
           if(pos-1>=0 and argString[pos-1]!=' ')
           {
@@ -93,16 +97,18 @@ vector<string> getSpecialArg(string argString)
             
           }
           else if(pos+1<sz and argString[pos+1]==' ') // if previous was space then the word preceding is already stored
-          {
-            //newArg=argString.substr(pos+1,1);
-            newArg="";//modification suited for echo command, until some situation requires passing space as arguments 
-            //to path functions
+          {//skip upcoming space character to avoid it in echo
+            newArg=argString.substr(pos+1,1);
             lastWordStart=pos+2;
             unquotedArgs.push_back(newArg);
             argNum+=1;
             spaceStart=true;
             pos+=1;
           }
+          // else if(pos+1<sz and argString[pos+1]!=' ')//could be just another character or special character so don't skip
+          // {
+          //   newArg= argString.substr
+          // }
           
         }
         else if(singleQuoteStart==false and  argString[pos]=='\'')
@@ -227,7 +233,10 @@ int main() {
       for(string wd:unquotedArgs)
       {
         //cout<<"("<<wd<<") ";
-        cout<<wd<<" ";
+        if(wd!=" ")
+          cout<<wd<<" ";
+        else
+          cout<<" ";
       }
       cout<<"\n";
     }
