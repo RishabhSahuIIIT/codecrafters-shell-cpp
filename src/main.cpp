@@ -9,16 +9,16 @@
 #include<unistd.h>
 using namespace std;
 
+//Need to implement tokenizer that supports both " " and \ characters and their combinations
+//Option1 : Using regex library: somewhat complex
+//Option2 :
+
 // separate single quoted arguments
 vector<string> getSpecialArg(string argString)
 {
   
   int sz=argString.size();
-  //Option1: detect escapes and insert double quotes instead
-  //option2: deal with argument string characterwise but don't separate into arguments just now
-  //option2 will not make significant difference
-
-
+  //Option1: detect escapes and insert double quotes instead 
   vector<string>unquotedArgs;
   bool singleQuoteStart=false;
   int lastSingleQuoteStart=0;
@@ -27,28 +27,28 @@ vector<string> getSpecialArg(string argString)
   int lastWordStart=0;
   int argNum=0;
   set<int>quotedNums;
-  
+  bool escapeLock=false;
   //special characters for double quotes  ‘$’, ‘`’, ‘"’, ‘\’, 
   bool doubleQuoteStart=false;
   int lastDoubleQuoteStart=0;
   for( int pos=0;pos<sz;pos++)
   {
-    //cases of quote
-    if( doubleQuoteStart==true and argString[pos]=='\\') //may delete this
+
+    if(doubleQuoteStart==true and argString[pos]=='\"')
     {
-      if((pos+1<sz) and( argString[pos+1]== '\\'  or argString[pos+1]=='$' or argString[pos+1]=='`' or argString[pos+1]=='\"') )
+      if(argString[pos-1]!='\\')
       {
-        argString.erase(pos);
-        sz=argString.size();
-      }
-    }
-    else if(doubleQuoteStart==true and argString[pos]=='\"')
-    {
         newArg=argString.substr(lastDoubleQuoteStart+1,((pos-1)-(lastDoubleQuoteStart+1)+1));
         doubleQuoteStart=false;
-        unquotedArgs.push_back(newArg);  
+        unquotedArgs.push_back(newArg); 
+//cout<<"tokenA=" <<newArg<<"\n";
         quotedNums.insert(argNum);
-        argNum+=1;
+        argNum+=1;        
+      }
+      else
+      {
+        continue;
+      }
     }
     else if(doubleQuoteStart==true and argString[pos]!='\"')
     {
@@ -56,104 +56,111 @@ vector<string> getSpecialArg(string argString)
     }
     else if(doubleQuoteStart==false)
     {
-      if(argString[pos]=='\"')
+      if(argString[pos]=='\"') //double quote starts now
       {
         doubleQuoteStart=true;
         lastDoubleQuoteStart=pos;
         spaceStart=false;
         if(quotedNums.find(argNum-1)!=quotedNums.end() and argString[pos-1]!='\'' and argString[pos-1]!='\"')
         {
-          quotedNums.erase(argNum-1);
+          quotedNums.erase(argNum-1);   
         }
-
-        
       }
-      else if (singleQuoteStart ==true and argString[pos]=='\'' )
+      else if (singleQuoteStart==true)
       {
-        //extra pos-1 and lastSingleQuoteStart+1 to remove quotes
-        newArg=argString.substr(lastSingleQuoteStart+1,((pos-1)-(lastSingleQuoteStart+1)+1));
-        singleQuoteStart=false;
-        unquotedArgs.push_back(newArg);  
-        quotedNums.insert(argNum);
-        argNum+=1;
-        
-      } 
-      else if(singleQuoteStart==true and argString[pos]!='\'' )
-      {
-        continue;
+        if (argString[pos]=='\'' ) //close previously started single quote
+        {
+          //extra pos-1 and lastSingleQuoteStart+1 to remove quotes
+          newArg=argString.substr(lastSingleQuoteStart+1,((pos-1)-(lastSingleQuoteStart+1)+1));
+          singleQuoteStart=false;
+          unquotedArgs.push_back(newArg);  
+//cout<<"tokenB=" <<newArg<<"\n";
+          quotedNums.insert(argNum);
+          argNum+=1;        
+        } 
+        else if(argString[pos]!='\'' )
+        {
+          continue;
+        }
       }
       //cases without quote
       else if(singleQuoteStart==false )
       {
         if(argString[pos]=='\\')// backslash outside any quotes
-        {
-          if(pos-1>=0 and argString[pos-1]!=' ')
+        {          
+          if(pos+1<sz ) // if previous was space then the word preceding is already stored
           {
-            argString.erase(pos,1);
-            sz=argString.size();
-            newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
-            unquotedArgs.push_back(newArg);
-            argNum+=1;
-            
-          }
-          else if(pos+1<sz and argString[pos+1]==' ') // if previous was space then the word preceding is already stored
-          {//skip upcoming space character to avoid it in echo
+            if(spaceStart==true) //need to store any preceding lettered word as well
+            {
+              newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
+              unquotedArgs.push_back(newArg);
+//cout<<"tokenC=" <<newArg<<"\n";
+              spaceStart=false;
+              argNum+=1;
+            }
             newArg=argString.substr(pos+1,1);
             lastWordStart=pos+2;
             unquotedArgs.push_back(newArg);
+//cout<<"tokenD=" <<newArg<<"\n";
             argNum+=1;
-            spaceStart=true;
+            //which among space start or double start or single start?
             pos+=1;
+            
           }
-          // else if(pos+1<sz and argString[pos+1]!=' ')//could be just another character or special character so don't skip
-          // {
-          //   newArg= argString.substr
-          // }
-          
         }
-        else if(singleQuoteStart==false and  argString[pos]=='\'')
+/* New test case
+echo \'\"test script\"\'
+remote: [tester::#YT5] Output does not match expected value.
+remote: [tester::#YT5] Expected: "'"test script"'"
+*/        
+        else if( argString[pos]=='\'')//single quote starts
         {
           singleQuoteStart=true;
           lastSingleQuoteStart=pos;
           spaceStart=false;
           if(quotedNums.find(argNum-1)!=quotedNums.end() and argString[pos-1]!='\'' and argString[pos-1]!='\"')
           {
-            quotedNums.erase(argNum-1);
+            quotedNums.erase(argNum-1); 
           }
-          
-          if(spaceStart==true)
+          if(spaceStart==true) //end any previous word
           {
             newArg=argString.substr(lastWordStart,((pos-2)-lastWordStart+1));
             unquotedArgs.push_back(newArg);
+//cout<<"tokenE=" <<newArg<<"\n";
             spaceStart=false;
             argNum+=1;
+            
           }
         }
         else if( argString[pos]==' ' and spaceStart==false )
         {
           continue;
+
         }
         else if(argString[pos]==' ' and spaceStart==true )
         {
           newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
           unquotedArgs.push_back(newArg);
+//cout<<"tokenF=" <<newArg<<"\n";
           spaceStart=false;
           argNum+=1;
+          
         }
         else if(argString[pos]!=' ' and spaceStart==false)// not a space and not a quote
         {
           lastWordStart=pos;
           spaceStart=true;
+//cout<<"check "<<argString[pos]<<"\n";
         }
-      }
+      }      
+      
     }
-  }
-    
-    
+  } 
   if(argString[sz-1]!='\'' and argString[sz-1]!=' ' and argString[sz-1]!='\"' and spaceStart==true)
   {
     newArg=argString.substr(lastWordStart,((sz-1)-lastWordStart+1));
     unquotedArgs.push_back(newArg);
+//cout<<"tokenG=" <<newArg<<"\n";
     argNum+=1;
   }
   vector<string>quotedMerged;
@@ -230,15 +237,52 @@ int main() {
       string argString=input.substr(5);
       //cout<<"("<<argString<<")";
       vector <string> unquotedArgs= getSpecialArg(argString);
-      for(string wd:unquotedArgs)
+      int uqSz=unquotedArgs.size();
+      bool addSpace;
+      for(int pos=0;pos<uqSz;pos++)
       {
-        //cout<<"("<<wd<<") ";
-        if(wd!=" ")
-          cout<<wd<<" ";
+        string wd=unquotedArgs[pos];
+        cout<<wd;
+        if(wd.size()!=1 and pos+1<uqSz and unquotedArgs[pos+1]!="\\" and unquotedArgs[pos+1]!="\'" and unquotedArgs[pos+1]!="\"" and unquotedArgs[pos+1]!="$" and unquotedArgs[pos+1]!=" ")
+          addSpace=true;
+        else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$' and wd[0]!=' ') 
+          addSpace=true;
+        else if(wd==" ")
+        {
+          addSpace=false;
+        }
         else
+        {
+          addSpace=false;
+        }
+        if(addSpace)
+        {
           cout<<" ";
+        }
+
+
       }
       cout<<"\n";
+      // for(string wd:unquotedArgs)
+      // {
+      //   //cout<<"("<<wd<<") ";
+      //   if(wd.size()!=1)
+      //     cout<<wd<<" ";
+      //   else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$') 
+      //     cout<<wd<<" ";
+      //   else if (wd!=" ")
+      //   {
+      //     cout<<wd;
+      //   }
+      //   else if(wd==" ")
+      //   {
+      //     cout<<" ";
+      //   }
+        
+      //   // else if( wd[0]=='\\')
+      //   //   cout<<wd.substr(1,wd.size()-1)<<"#";
+      // }
+//cout<<"End\n";
     }
     else if(input.substr(0,3)=="pwd")
     {
