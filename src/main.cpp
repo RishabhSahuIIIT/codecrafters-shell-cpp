@@ -99,12 +99,13 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
             {
               newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
               unquotedArgs.push_back(newArg);
-              escapedList.insert(argNum+1); // BUT NUMBERING CHANGES OUTSIDE SINCE WE REMOVED SOME PARAMETER
+              
 //cout<<"tokenC=" <<newArg<<"\n";
               spaceStart=false;
-              escapedList.insert(argNum);
+              
               argNum+=1;
             }
+            escapedList.insert(argNum+1); 
             newArg=argString.substr(pos+1,1);
             lastWordStart=pos+2;
             unquotedArgs.push_back(newArg);
@@ -156,9 +157,11 @@ remote: [tester::#TG6] Assertion failed.
             unquotedArgs.push_back(newArg);
 //cout<<"tokenE=" <<newArg<<"\n";
             spaceStart=false;
+            escapedList.insert(argNum);
             argNum+=1;
             
           }
+          
         }
         else if( argString[pos]==' ' and spaceStart==false )
         {
