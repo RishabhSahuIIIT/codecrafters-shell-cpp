@@ -37,7 +37,7 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
 
     if(doubleQuoteStart==true)
     {
-      if(argString[pos]=='\"' and argString[pos-1]!='\\')
+      if(argString[pos]=='\"' )
       {
         newArg=argString.substr(lastDoubleQuoteStart+1,((pos-1)-(lastDoubleQuoteStart+1)+1));
         doubleQuoteStart=false;
@@ -119,6 +119,12 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
 [tester::#GU3] Output does not match expected value.
 [tester::#GU3] Expected: "shell'test'\'script"
 [tester::#GU3] Received: "shell'test'\\'script"
+
+remote: [your-program] $ echo "mixed\"quote'script'\\"
+remote: [tester::#GU3] Output does not match expected value.
+remote: [tester::#GU3] Expected: "mixed"quote'script'\"
+remote: [tester::#GU3] Received: ""
+
 */        
 
         else if( argString[pos]=='\'')//single quote starts
