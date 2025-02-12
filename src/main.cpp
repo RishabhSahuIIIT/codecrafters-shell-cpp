@@ -260,7 +260,7 @@ int main() {
       // {
       //   cout<<escapes<<" ";
       // }
-      cout<<"\n";
+      //cout<<"\n";
       for(int pos=0;pos<uqSz;pos++)
       {
         string wd=unquotedArgs[pos];
