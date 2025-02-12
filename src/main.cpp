@@ -57,7 +57,7 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
     }
     else if(doubleQuoteStart==false)
     {
-      if(argString[pos]=='\"') //double quote starts now
+      if(argString[pos]=='\"' and singleQuoteStart==false) //double quote starts now
       {
         doubleQuoteStart=true;
         lastDoubleQuoteStart=pos;
@@ -75,6 +75,7 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
           newArg=argString.substr(lastSingleQuoteStart+1,((pos-1)-(lastSingleQuoteStart+1)+1));
           singleQuoteStart=false;
           unquotedArgs.push_back(newArg);  
+  //cout<<newArg<<"\n";
 //cout<<"tokenB=" <<newArg<<"\n";
           quotedNums.insert(argNum);
           argNum+=1;        
@@ -169,20 +170,6 @@ example\"testhello\"shell
 //cout<<"tokenG=" <<newArg<<"\n";
     argNum+=1;
   }
-  else if(argString[sz-1]=='\'')
-  {
-    newArg=argString.substr(lastSingleQuoteStart+1,((sz-2)-(lastSingleQuoteStart+1)+1));
-    unquotedArgs.push_back(newArg);
-//cout<<"tokenH=" <<newArg<<"\n";
-    argNum+=1;
-  }
-  else if(argString[sz-1]=='\"')
-  {
-    newArg=argString.substr(lastDoubleQuoteStart+1,((sz-2)-(lastDoubleQuoteStart+1)+1));
-    unquotedArgs.push_back(newArg);
-//cout<<"tokenI=" <<newArg<<"\n";
-    argNum+=1;
-  }
   //join two or more arguments separated only by quotes
   vector<string>quotedMerged;
   int quotedargCount=unquotedArgs.size();
@@ -196,12 +183,14 @@ example\"testhello\"shell
       }
       else
       {
+//cout<<unquotedArgs[agNum]<<")\n";
         quotedMerged.push_back(unquotedArgs[agNum]);        
       }
     }
     
     else
     {
+//cout<<unquotedArgs[agNum]<<")\n";
       quotedMerged.push_back(unquotedArgs[agNum]);      
     }
   }
