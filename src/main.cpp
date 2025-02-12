@@ -42,7 +42,7 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
         newArg=argString.substr(lastDoubleQuoteStart+1,((pos-1)-(lastDoubleQuoteStart+1)+1));
         doubleQuoteStart=false;
         unquotedArgs.push_back(newArg); 
-cout<<"tokenA=" <<newArg<<"\n";
+//cout<<"tokenA=" <<newArg<<"\n";
         quotedNums.insert(argNum);
         argNum+=1;        
       }
@@ -75,7 +75,7 @@ cout<<"tokenA=" <<newArg<<"\n";
           newArg=argString.substr(lastSingleQuoteStart+1,((pos-1)-(lastSingleQuoteStart+1)+1));
           singleQuoteStart=false;
           unquotedArgs.push_back(newArg);  
-cout<<"tokenB=" <<newArg<<"\n";
+//cout<<"tokenB=" <<newArg<<"\n";
           quotedNums.insert(argNum);
           argNum+=1;        
         } 
@@ -96,14 +96,14 @@ cout<<"tokenB=" <<newArg<<"\n";
               newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
               unquotedArgs.push_back(newArg);
               escapedList.insert(argNum+1); // BUT NUMBERING CHANGES OUTSIDE SINCE WE REMOVED SOME PARAMETER
-cout<<"tokenC=" <<newArg<<"\n";
+//cout<<"tokenC=" <<newArg<<"\n";
               spaceStart=false;
               argNum+=1;
             }
             newArg=argString.substr(pos+1,1);
             lastWordStart=pos+2;
             unquotedArgs.push_back(newArg);
-cout<<"tokenD=" <<newArg<<"\n";
+//cout<<"tokenD=" <<newArg<<"\n";
             argNum+=1;
             //which among space start or double start or single start?
             pos+=1;
@@ -126,13 +126,13 @@ example\"testhello\"shell
           if(quotedNums.find(argNum-1)!=quotedNums.end() and argString[pos-1]!='\'' and argString[pos-1]!='\"')
           {
             quotedNums.erase(argNum-1); 
-cout<<"Erased a token\n";
+//cout<<"Erased a token\n";
           }
           if(spaceStart==true) //end any previous word
           {
             newArg=argString.substr(lastWordStart,((pos-2)-lastWordStart+1));
             unquotedArgs.push_back(newArg);
-cout<<"tokenE=" <<newArg<<"\n";
+//cout<<"tokenE=" <<newArg<<"\n";
             spaceStart=false;
             argNum+=1;
             
@@ -147,7 +147,7 @@ cout<<"tokenE=" <<newArg<<"\n";
         {
           newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
           unquotedArgs.push_back(newArg);
-cout<<"tokenF=" <<newArg<<"\n";
+//cout<<"tokenF=" <<newArg<<"\n";
           spaceStart=false;
           argNum+=1;
           
@@ -156,7 +156,7 @@ cout<<"tokenF=" <<newArg<<"\n";
         {
           lastWordStart=pos;
           spaceStart=true;
-cout<<"check "<<argString[pos]<<"\n";
+//cout<<"check "<<argString[pos]<<"\n";
         }
       }      
       
@@ -166,21 +166,21 @@ cout<<"check "<<argString[pos]<<"\n";
   {
     newArg=argString.substr(lastWordStart,((sz-1)-lastWordStart+1));
     unquotedArgs.push_back(newArg);
-cout<<"tokenG=" <<newArg<<"\n";
+//cout<<"tokenG=" <<newArg<<"\n";
     argNum+=1;
   }
   else if(argString[sz-1]=='\'')
   {
     newArg=argString.substr(lastSingleQuoteStart+1,((sz-2)-(lastSingleQuoteStart+1)+1));
     unquotedArgs.push_back(newArg);
-cout<<"tokenH=" <<newArg<<"\n";
+//cout<<"tokenH=" <<newArg<<"\n";
     argNum+=1;
   }
   else if(argString[sz-1]=='\"')
   {
     newArg=argString.substr(lastDoubleQuoteStart+1,((sz-2)-(lastDoubleQuoteStart+1)+1));
     unquotedArgs.push_back(newArg);
-cout<<"tokenI=" <<newArg<<"\n";
+//cout<<"tokenI=" <<newArg<<"\n";
     argNum+=1;
   }
   //join two or more arguments separated only by quotes
