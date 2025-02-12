@@ -279,23 +279,27 @@ int main() {
       {
         string wd=unquotedArgs[pos];
         cout<<wd;
-      //if escaped then don't add space afterward?
+        //if escaped then don't add space afterward?
 
         if(escapedList.find(pos)!=escapedList.end())
         {
           addSpace=false;
         }
-        else if(wd.size()!=1 and pos+1<uqSz and unquotedArgs[pos+1]!="\\" and unquotedArgs[pos+1]!="\'" and unquotedArgs[pos+1]!="\"" and unquotedArgs[pos+1]!="$" and unquotedArgs[pos+1]!=" " and escapedList.find(pos+1)==escapedList.end())
-          addSpace=true;
-        else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$' and wd[0]!=' ' and escapedList.find(pos)==escapedList.end()) 
-          addSpace=true;
+        else if(escapedList.find(pos)==escapedList.end())
+        {
+         addSpace=true; 
+        }
+        // else if(wd.size()!=1 and pos+1<uqSz and unquotedArgs[pos+1]!="\\" and unquotedArgs[pos+1]!="\'" and unquotedArgs[pos+1]!="\"" and unquotedArgs[pos+1]!="$" and unquotedArgs[pos+1]!=" " and escapedList.find(pos+1)==escapedList.end())
+        //   addSpace=true;
+        // else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$' and wd[0]!=' ' and escapedList.find(pos)==escapedList.end()) 
+        //   addSpace=true;
         else if(wd==" " )
         {
           addSpace=false;
         }
         else
         {
-          addSpace=false;
+          addSpace=true;
         }
         if(addSpace)
         {
