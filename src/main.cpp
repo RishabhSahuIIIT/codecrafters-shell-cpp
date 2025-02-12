@@ -44,7 +44,8 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
         unquotedArgs.push_back(newArg); 
 //cout<<"tokenA=" <<newArg<<"\n";
         quotedNums.insert(argNum);
-        escapedList.insert(argNum);
+        if(pos+1<sz and argString[pos+1]!=' ')
+          escapedList.insert(argNum);
         argNum+=1;        
       }
       else if(argString[pos]=='\\')//backslash within double quotes
@@ -124,6 +125,15 @@ remote: [your-program] $ echo "mixed\"quote'script'\\"
 remote: [tester::#GU3] Output does not match expected value.
 remote: [tester::#GU3] Expected: "mixed"quote'script'\"
 remote: [tester::#GU3] Received: ""
+
+remote: [your-program] $ echo "example  test"  "script""world"
+remote: [your-program] example  testscriptworld
+remote: [tester::#TG6] Output does not match expected value.
+remote: [tester::#TG6] Expected: "example  test scriptworld"
+remote: [tester::#TG6] Received: "example  testscriptworld"
+remote: [your-program] $ 
+remote: [tester::#TG6] Assertion failed.
+
 
 */        
 
