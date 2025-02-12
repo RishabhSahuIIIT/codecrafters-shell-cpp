@@ -99,7 +99,7 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
             {
               newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
               unquotedArgs.push_back(newArg);
-              
+              escapedList.insert(argNum);   
 //cout<<"tokenC=" <<newArg<<"\n";
               spaceStart=false;
               
