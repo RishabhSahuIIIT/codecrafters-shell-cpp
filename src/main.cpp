@@ -35,25 +35,27 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
   for( int pos=0;pos<sz;pos++)
   {
 
-    if(doubleQuoteStart==true and argString[pos]=='\"')
+    if(doubleQuoteStart==true)
     {
-      if(argString[pos-1]!='\\')
+      if(argString[pos]=='\"' and argString[pos-1]!='\\')
       {
         newArg=argString.substr(lastDoubleQuoteStart+1,((pos-1)-(lastDoubleQuoteStart+1)+1));
         doubleQuoteStart=false;
         unquotedArgs.push_back(newArg); 
 //cout<<"tokenA=" <<newArg<<"\n";
         quotedNums.insert(argNum);
+        escapedList.insert(argNum);
         argNum+=1;        
       }
-      else
+      else if(argString[pos]=='\\')//backslash within double quotes
       {
-        continue;
+        if(argString[pos+1]=='\\' or argString[pos+1]=='`' or argString[pos+1]=='$' or argString[pos+1]=='\"')
+        {
+          argString.erase(pos,1);
+          sz=argString.size();
+          
+        }
       }
-    }
-    else if(doubleQuoteStart==true and argString[pos]!='\"')
-    {
-      continue;
     }
     else if(doubleQuoteStart==false)
     {
@@ -112,10 +114,11 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
           }
         }
 /* New test case
-$ echo 'shell\\\nscript'
-shell\\\nscript
-$ echo 'example\"testhello\"shell'
-example\"testhello\"shell
+[your-program] $ echo "shell'test'\\'script"
+[your-program] shell'test'\\'script
+[tester::#GU3] Output does not match expected value.
+[tester::#GU3] Expected: "shell'test'\'script"
+[tester::#GU3] Received: "shell'test'\\'script"
 */        
 
         else if( argString[pos]=='\'')//single quote starts
@@ -262,12 +265,15 @@ int main() {
         cout<<wd;
       //if escaped then don't add space afterward?
 
-
-        if(wd.size()!=1 and pos+1<uqSz and unquotedArgs[pos+1]!="\\" and unquotedArgs[pos+1]!="\'" and unquotedArgs[pos+1]!="\"" and unquotedArgs[pos+1]!="$" and unquotedArgs[pos+1]!=" " and escapedList.find(pos+1)==escapedList.end())
+        if(escapedList.find(pos)!=escapedList.end())
+        {
+          addSpace=false;
+        }
+        else if(wd.size()!=1 and pos+1<uqSz and unquotedArgs[pos+1]!="\\" and unquotedArgs[pos+1]!="\'" and unquotedArgs[pos+1]!="\"" and unquotedArgs[pos+1]!="$" and unquotedArgs[pos+1]!=" " and escapedList.find(pos+1)==escapedList.end())
           addSpace=true;
         else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$' and wd[0]!=' ' and escapedList.find(pos)==escapedList.end()) 
           addSpace=true;
-        else if(wd==" " or escapedList.find(pos)!=escapedList.end())
+        else if(wd==" " )
         {
           addSpace=false;
         }
