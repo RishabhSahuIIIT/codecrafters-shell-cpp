@@ -11,10 +11,11 @@ using namespace std;
 
 //Need to implement tokenizer that supports both " " and \ characters and their combinations
 //Option1 : Using regex library: somewhat complex
-//Option2 :
+//Option2 : Modify so that escaped characters are not prepended and appended with spaces by storing their index and returning
+
 
 // separate single quoted arguments
-vector<string> getSpecialArg(string argString)
+vector<string> getSpecialArg(string argString,set<int>&escapedList)
 {
   
   int sz=argString.size();
@@ -94,6 +95,7 @@ vector<string> getSpecialArg(string argString)
             {
               newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
               unquotedArgs.push_back(newArg);
+              escapedList.insert(argNum+1); // BUT NUMBERING CHANGES OUTSIDE SINCE WE REMOVED SOME PARAMETER
 //cout<<"tokenC=" <<newArg<<"\n";
               spaceStart=false;
               argNum+=1;
@@ -113,6 +115,19 @@ echo \'\"test script\"\'
 remote: [tester::#YT5] Output does not match expected value.
 remote: [tester::#YT5] Expected: "'"test script"'"
 */        
+//escaped string implies no extra space
+
+/* New test case
+ $ echo hello\nscript
+remote: [your-program] hello n script
+remote: [tester::#YT5] Output does not match expected value.
+remote: [tester::#YT5] Expected: "hellonscript"
+remote: [tester::#YT5] Received: "hello n script"
+
+
+BASICALLY NEVER ADD SPACE BEFORE AND AFTER ESCAPTED ARGUMENTS ,SO RETURN LIST OF THE ESCAPED ARGUMENTS
+*/
+
         else if( argString[pos]=='\'')//single quote starts
         {
           singleQuoteStart=true;
@@ -227,6 +242,7 @@ int main() {
     
     string input;
     getline(std::cin, input);
+    set<int>escapedList;
     if(input.substr(0,4)=="exit")
     {
       exit(0);
@@ -236,18 +252,27 @@ int main() {
       //TODO :Manage single quotes
       string argString=input.substr(5);
       //cout<<"("<<argString<<")";
-      vector <string> unquotedArgs= getSpecialArg(argString);
+      
+      vector <string> unquotedArgs= getSpecialArg(argString,escapedList);
       int uqSz=unquotedArgs.size();
       bool addSpace;
+      // for(int escapes:escapedList)
+      // {
+      //   cout<<escapes<<" ";
+      // }
+      cout<<"\n";
       for(int pos=0;pos<uqSz;pos++)
       {
         string wd=unquotedArgs[pos];
         cout<<wd;
-        if(wd.size()!=1 and pos+1<uqSz and unquotedArgs[pos+1]!="\\" and unquotedArgs[pos+1]!="\'" and unquotedArgs[pos+1]!="\"" and unquotedArgs[pos+1]!="$" and unquotedArgs[pos+1]!=" ")
+      //if escaped then don't add space afterward?
+
+
+        if(wd.size()!=1 and pos+1<uqSz and unquotedArgs[pos+1]!="\\" and unquotedArgs[pos+1]!="\'" and unquotedArgs[pos+1]!="\"" and unquotedArgs[pos+1]!="$" and unquotedArgs[pos+1]!=" " and escapedList.find(pos+1)==escapedList.end())
           addSpace=true;
-        else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$' and wd[0]!=' ') 
+        else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$' and wd[0]!=' ' and escapedList.find(pos)==escapedList.end()) 
           addSpace=true;
-        else if(wd==" ")
+        else if(wd==" " or escapedList.find(pos)!=escapedList.end())
         {
           addSpace=false;
         }
@@ -380,7 +405,7 @@ int main() {
         int ag1Size=arg1.size();
         
         string argString=input.substr(ag1Size+1);        
-        vector <string> unquotedArgs= getSpecialArg(argString);
+        vector <string> unquotedArgs= getSpecialArg(argString,escapedList);
         vector<char* >charArgs;
         charArgs.push_back(const_cast<char*>(arg1.c_str()));
         for(const string &wd:unquotedArgs)
