@@ -60,7 +60,7 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
     }
     else if(doubleQuoteStart==false)
     {
-      if(argString[pos]=='\"' and singleQuoteStart==false) //double quote starts now
+      if(argString[pos]=='\"' and argString[pos-1]!='\\' and singleQuoteStart==false) //double quote starts now
       {
         doubleQuoteStart=true;
         lastDoubleQuoteStart=pos;
@@ -102,11 +102,13 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
               escapedList.insert(argNum+1); // BUT NUMBERING CHANGES OUTSIDE SINCE WE REMOVED SOME PARAMETER
 //cout<<"tokenC=" <<newArg<<"\n";
               spaceStart=false;
+              escapedList.insert(argNum);
               argNum+=1;
             }
             newArg=argString.substr(pos+1,1);
             lastWordStart=pos+2;
             unquotedArgs.push_back(newArg);
+            
 //cout<<"tokenD=" <<newArg<<"\n";
             argNum+=1;
             //which among space start or double start or single start?
