@@ -101,14 +101,14 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
               unquotedArgs.push_back(newArg);
               escapedList.insert(argNum);   
 //cout<<"tokenC=" <<newArg<<"\n";
-              spaceStart=false;
+              
               escapedList.insert(argNum+1); 
               argNum+=1;
             }
             else
             {
-              escapedList.insert(argNum);
-              escapedList.insert(argNum+1); 
+              escapedList.insert(argNum+1);
+              
             }
             newArg=argString.substr(pos+1,1);
             lastWordStart=pos+2;
@@ -116,34 +116,16 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
             
 //cout<<"tokenD=" <<newArg<<"\n";
             argNum+=1;
-            //which among space start or double start or single start?
             pos+=1;
-            
           }
         }
 /* New test case
-[your-program] $ echo "shell'test'\\'script"
-[your-program] shell'test'\\'script
-[tester::#GU3] Output does not match expected value.
-[tester::#GU3] Expected: "shell'test'\'script"
-[tester::#GU3] Received: "shell'test'\\'script"
-
-remote: [your-program] $ echo "mixed\"quote'script'\\"
-remote: [tester::#GU3] Output does not match expected value.
-remote: [tester::#GU3] Expected: "mixed"quote'script'\"
-remote: [tester::#GU3] Received: ""
-
-remote: [your-program] $ echo "example  test"  "script""world"
-remote: [your-program] example  testscriptworld
-remote: [tester::#TG6] Output does not match expected value.
-remote: [tester::#TG6] Expected: "example  test scriptworld"
-remote: [tester::#TG6] Received: "example  testscriptworld"
-remote: [your-program] $ 
-remote: [tester::#TG6] Assertion failed.
-
-
+remote: [your-program] $ echo \'\"shell world\"\'
+remote: [your-program] '"shellworld"'
+remote: [tester::#YT5] Output does not match expected value.
+remote: [tester::#YT5] Expected: "'"shell world"'"
+remote: [tester::#YT5] Received: "'"shellworld"'"
 */        
-
         else if( argString[pos]=='\'')//single quote starts
         {
           singleQuoteStart=true;
