@@ -56,6 +56,7 @@ string unescapeWord(string arg)
       sz=arg.size();
     }
   }
+  return arg;
 }
 // separate single quoted arguments
 vector<string> getSpecialArg(string argString,set<int>&escapedList)
