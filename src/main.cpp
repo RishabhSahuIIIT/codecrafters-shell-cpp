@@ -45,6 +45,18 @@ string getMainArg(string input)
   }
   return command;
 }
+string unescapeWord(string arg)
+{
+  int sz=arg.size();
+  for(int pos=0;pos<sz;pos++)
+  {
+    if(arg[pos]=='\\')
+    {
+      arg.erase(pos,1);
+      sz=arg.size();
+    }
+  }
+}
 // separate single quoted arguments
 vector<string> getSpecialArg(string argString,set<int>&escapedList)
 {
@@ -156,6 +168,13 @@ $ 'exe  with  space' /tmp/baz/f1
 [tester::#QJ0] Output does not match expected value.
 [tester::#QJ0] Expected: "banana grape."
 [tester::#QJ0] Received: "'exe  with  space' /tmp/baz/f1: command not found"
+
+$ "exe with \'single quotes\'" /tmp/foo/f3
+remote: [tester::#QJ0] Output does not match expected value.
+remote: [tester::#QJ0] Expected: "pear apple."
+remote: [tester::#QJ0] Received: ""
+remote: [your-program] fail with negative code         : No such file or directory
+
 */        
         else if( argString[pos]=='\'')//single quote starts
         {
@@ -471,6 +490,7 @@ int main() {
         else
         {
           arg1=command.substr(1,sz2-2);
+          arg1=unescapeWord(arg1);
           argString= input.substr(sz2+1);
 
         }    
