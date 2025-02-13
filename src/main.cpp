@@ -13,7 +13,38 @@ using namespace std;
 //Option1 : Using regex library: somewhat complex
 //Option2 : Modify so that escaped characters are not prepended and appended with spaces by storing their index and returning
 
+string getMainArg(string input)
+{
+  string command="";
+  int sz=input.size();
+  int k;
+  if(input[0]=='\"')
+  {
 
+    for(int pos=1 ;pos<sz;pos++)
+    {
+     if(input[pos]=='\"') 
+     {
+       k=pos;
+       break;
+     }
+    }
+    command=input.substr(0,k);
+  }
+  else if(input[0]=='\'')
+  {
+    for(int pos=1 ;pos<sz;pos++)
+    {
+     if(input[pos]=='\'') 
+     {
+       k=pos;
+       break;
+     }
+    }
+    command=input.substr(0,k+1);
+  }
+  return command;
+}
 // separate single quoted arguments
 vector<string> getSpecialArg(string argString,set<int>&escapedList)
 {
@@ -120,11 +151,11 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
           }
         }
 /* New test case
-remote: [your-program] $ echo \'\"shell world\"\'
-remote: [your-program] '"shellworld"'
-remote: [tester::#YT5] Output does not match expected value.
-remote: [tester::#YT5] Expected: "'"shell world"'"
-remote: [tester::#YT5] Received: "'"shellworld"'"
+$ 'exe  with  space' /tmp/baz/f1
+[your-program] 'exe  with  space' /tmp/baz/f1: command not found
+[tester::#QJ0] Output does not match expected value.
+[tester::#QJ0] Expected: "banana grape."
+[tester::#QJ0] Received: "'exe  with  space' /tmp/baz/f1: command not found"
 */        
         else if( argString[pos]=='\'')//single quote starts
         {
@@ -248,6 +279,7 @@ int main() {
     string input;
     getline(std::cin, input);
     set<int>escapedList;
+    
     if(input.substr(0,4)=="exit")
     {
       exit(0);
@@ -261,11 +293,7 @@ int main() {
       vector <string> unquotedArgs= getSpecialArg(argString,escapedList);
       int uqSz=unquotedArgs.size();
       bool addSpace;
-      // for(int escapes:escapedList)
-      // {
-      //   cout<<escapes<<" ";
-      // }
-      //cout<<"\n";
+      
       for(int pos=0;pos<uqSz;pos++)
       {
         string wd=unquotedArgs[pos];
@@ -280,14 +308,6 @@ int main() {
         {
          addSpace=true; 
         }
-        // else if(wd.size()!=1 and pos+1<uqSz and unquotedArgs[pos+1]!="\\" and unquotedArgs[pos+1]!="\'" and unquotedArgs[pos+1]!="\"" and unquotedArgs[pos+1]!="$" and unquotedArgs[pos+1]!=" " and escapedList.find(pos+1)==escapedList.end())
-        //   addSpace=true;
-        // else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$' and wd[0]!=' ' and escapedList.find(pos)==escapedList.end()) 
-        //   addSpace=true;
-        // else if(wd==" " )
-        // {
-        //   addSpace=false;
-        // }
         
         if(addSpace)
         {
@@ -297,26 +317,7 @@ int main() {
 
       }
       cout<<"\n";
-      // for(string wd:unquotedArgs)
-      // {
-      //   //cout<<"("<<wd<<") ";
-      //   if(wd.size()!=1)
-      //     cout<<wd<<" ";
-      //   else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$') 
-      //     cout<<wd<<" ";
-      //   else if (wd!=" ")
-      //   {
-      //     cout<<wd;
-      //   }
-      //   else if(wd==" ")
-      //   {
-      //     cout<<" ";
-      //   }
-        
-      //   // else if( wd[0]=='\\')
-      //   //   cout<<wd.substr(1,wd.size()-1)<<"#";
-      // }
-//cout<<"End\n";
+      
     }
     else if(input.substr(0,3)=="pwd")
     {
@@ -330,14 +331,30 @@ int main() {
       string arg1;
       string arg2;
       string arg3;
+      bool flag;
+      string command;
+      int sz2;
+      string argString;
+      string detectedPathString;
+      vector<string>pathVars;
+      if(input[0]=='\'' or input[0]=='\"')
+    {
+      
+      command= getMainArg(input);
+      sz2=command.size();
+      argString= input.substr(sz);
+
+    }
+    else
+    {
       ss<<input;
       ss>>arg1>>arg2;
-      bool flag=false;
+      flag=false;
       string paths=string(getenv("PATH"));
       stringstream tokenizer(paths);
       string token;
-      vector<string>pathVars;
-      string detectedPathString;
+      
+      
       //parse the path variable into a vector of strings,
       
       //set flag and break the loop if condition met
@@ -368,6 +385,8 @@ int main() {
           }            
       }
 
+    }
+      
       
       if(input.substr(0,4)=="type")
       {
@@ -412,8 +431,13 @@ int main() {
       {
         int inputSz=input.size();
         int ag1Size=arg1.size();
+        if(input[0]!='\'' and input[0]!='\"')
+          argString=input.substr(ag1Size+1);    
+        else
+        {
+          arg1=command.substr(1,sz2-2);
+        }    
         
-        string argString=input.substr(ag1Size+1);        
         vector <string> unquotedArgs= getSpecialArg(argString,escapedList);
         vector<char* >charArgs;
         charArgs.push_back(const_cast<char*>(arg1.c_str()));
