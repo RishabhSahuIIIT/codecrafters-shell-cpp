@@ -342,7 +342,7 @@ int main() {
       
       command= getMainArg(input);
       sz2=command.size();
-      argString= input.substr(sz);
+      argString= input.substr(sz2);
 
     }
     else
