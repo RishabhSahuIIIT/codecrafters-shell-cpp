@@ -248,8 +248,8 @@ void executeCommand(string mainCommand,vector<char*>argList)
     int result = execvp(mainCommand.c_str(), argList.data());
     if(result<0)
     {
-      cout<<"fail message in cout\n";
-      perror("fail with negative code\n");
+      
+      perror("fail with negative code \t");
       exit(1);
     } 
   }
