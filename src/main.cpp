@@ -435,7 +435,7 @@ int main() {
           argString=input.substr(ag1Size+1);    
         else
         {
-          arg1=command.substr(1,sz2-2);
+          arg1=command.substr(0,sz2);
           argString= input.substr(sz2+1);
 //cout<<"("<<argString<<")\n";
         }    
