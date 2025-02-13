@@ -102,10 +102,14 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
               escapedList.insert(argNum);   
 //cout<<"tokenC=" <<newArg<<"\n";
               spaceStart=false;
-              
+              escapedList.insert(argNum+1); 
               argNum+=1;
             }
-            escapedList.insert(argNum+1); 
+            else
+            {
+              escapedList.insert(argNum);
+              escapedList.insert(argNum+1); 
+            }
             newArg=argString.substr(pos+1,1);
             lastWordStart=pos+2;
             unquotedArgs.push_back(newArg);
@@ -290,7 +294,7 @@ int main() {
         {
           addSpace=false;
         }
-        else if(escapedList.find(pos)==escapedList.end())
+        else 
         {
          addSpace=true; 
         }
@@ -298,14 +302,11 @@ int main() {
         //   addSpace=true;
         // else if (wd.size()==1 and wd[0]!='\\' and wd[0]!='\'' and wd[0]!='\"' and wd[0]!='$' and wd[0]!=' ' and escapedList.find(pos)==escapedList.end()) 
         //   addSpace=true;
-        else if(wd==" " )
-        {
-          addSpace=false;
-        }
-        else
-        {
-          addSpace=true;
-        }
+        // else if(wd==" " )
+        // {
+        //   addSpace=false;
+        // }
+        
         if(addSpace)
         {
           cout<<" ";
