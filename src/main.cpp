@@ -342,8 +342,8 @@ int main() {
       
       command= getMainArg(input);
       sz2=command.size();
-      argString= input.substr(sz2);
-
+      
+//cout<<"("<<command<<")\n";
     }
     else
     {
@@ -436,6 +436,8 @@ int main() {
         else
         {
           arg1=command.substr(1,sz2-2);
+          argString= input.substr(sz2+1);
+//cout<<"("<<argString<<")\n";
         }    
         
         vector <string> unquotedArgs= getSpecialArg(argString,escapedList);
