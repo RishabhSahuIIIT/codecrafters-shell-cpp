@@ -338,13 +338,46 @@ int main() {
       string detectedPathString;
       vector<string>pathVars;
       if(input[0]=='\'' or input[0]=='\"')
-    {
+      {
       
-      command= getMainArg(input);
-      sz2=command.size();
+        command= getMainArg(input);
+        sz2=command.size();
       
 //cout<<"("<<command<<")\n";
-    }
+        string paths=string(getenv("PATH"));
+        stringstream tokenizer(paths);
+        string token;
+
+
+        //parse the path variable into a vector of strings,
+
+        //set flag and break the loop if condition met
+        //check flag and output at the end accordingly
+
+        while(getline(tokenizer,token,':'))
+        {
+          pathVars.push_back(token);
+        }
+
+          
+        //search executable iterated in a loop over path strings
+        for(string pathFolder :pathVars )
+        {
+            string totalPath;
+            
+            totalPath= pathFolder+'/'+command;
+            
+            
+            filesystem::path pth(totalPath);
+            
+            flag=flag | (filesystem::exists(pth))    ;
+            if(filesystem::exists(pth))
+            {
+              detectedPathString=totalPath;
+              break;
+            }            
+        }
+      }
     else
     {
       ss<<input;
@@ -435,7 +468,7 @@ int main() {
           argString=input.substr(ag1Size+1);    
         else
         {
-          arg1=command.substr(0,sz2);
+          arg1=command.substr(1,sz2-2);
           argString= input.substr(sz2+1);
 //cout<<"("<<argString<<")\n";
         }    
