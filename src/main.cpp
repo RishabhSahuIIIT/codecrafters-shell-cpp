@@ -378,7 +378,7 @@ int main() {
               break;
             }            
         }
-        cout<<detectedPathString<<"\n";
+        
       }
     else
     {
