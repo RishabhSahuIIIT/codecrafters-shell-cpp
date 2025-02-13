@@ -365,7 +365,7 @@ int main() {
         {
             string totalPath;
             
-            totalPath= pathFolder+'/'+command;
+            totalPath= pathFolder+'/'+command.substr(1,sz2-2);
             
             
             filesystem::path pth(totalPath);
@@ -374,9 +374,11 @@ int main() {
             if(filesystem::exists(pth))
             {
               detectedPathString=totalPath;
+
               break;
             }            
         }
+        cout<<detectedPathString<<"\n";
       }
     else
     {
