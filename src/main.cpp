@@ -491,7 +491,7 @@ int main() {
         else
         {
           arg1=command.substr(1,sz2-2);
-          arg1=unescapeWord(arg1);
+          //arg1=unescapeWord(arg1);
           argString= input.substr(sz2+1);
 
         }    
