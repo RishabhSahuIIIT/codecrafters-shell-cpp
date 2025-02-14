@@ -268,7 +268,7 @@ void executeCommand(string mainCommand,vector<char*>argList)
     int result = execvp(mainCommand.c_str(), argList.data());
     if(result<0)
     {
-      
+      cerr<<mainCommand<<"\n";
       perror("fail with negative code \t");
       exit(1);
     } 
@@ -493,7 +493,7 @@ int main() {
           arg1=command.substr(1,sz2-2);
           
           arg1=unescapeWord(arg1);
-cout<<"("<<arg1<<")\n";
+//cout<<"("<<arg1<<")\n";
           argString= input.substr(sz2+1);
 
         }    
