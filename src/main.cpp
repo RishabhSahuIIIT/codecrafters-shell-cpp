@@ -490,7 +490,8 @@ int main() {
           argString=input.substr(ag1Size+1);    
         else
         {
-          arg1=command.substr(1,sz2-1);
+          //arg1=command.substr(1,sz2-1);
+          arg1=command;
           //arg1=unescapeWord(arg1);
 //cout<<"("<<arg1<<")\n";
           argString= input.substr(sz2+1);
