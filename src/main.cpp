@@ -268,7 +268,7 @@ void executeCommand(string mainCommand,vector<char*>argList)
     int result = execvp(mainCommand.c_str(), argList.data());
     if(result<0)
     {
-      cout<<argList.data()[1]<<"\n";
+      
       perror("fail with negative code \t");
       exit(1);
     } 
@@ -491,7 +491,7 @@ int main() {
         else
         {
           arg1=command.substr(1,sz2-1);
-//arg1=unescapeWord(arg1);
+          arg1=unescapeWord(arg1);
 //cout<<"("<<arg1<<")\n";
           argString= input.substr(sz2+1);
 
