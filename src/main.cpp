@@ -493,7 +493,7 @@ int main() {
           arg1=command.substr(1,sz2-2);
           
           arg1=unescapeWord(arg1);
-//cout<<"("<<arg1<<")\n";
+cout<<"("<<arg1<<")\n";
           argString= input.substr(sz2+1);
 
         }    
