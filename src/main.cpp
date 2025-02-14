@@ -45,19 +45,7 @@ string getMainArg(string input)
   }
   return command;
 }
-string unescapeWord(string arg)
-{
-  int sz=arg.size();
-  for(int pos=0;pos<sz;pos++)
-  {
-    if(arg[pos]=='\\')
-    {
-      arg.erase(pos,1);
-      sz=arg.size();
-    }
-  }
-  return arg;
-}
+
 // separate single quoted arguments
 vector<string> getSpecialArg(string argString,set<int>&escapedList)
 {
@@ -86,7 +74,6 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
         newArg=argString.substr(lastDoubleQuoteStart+1,((pos-1)-(lastDoubleQuoteStart+1)+1));
         doubleQuoteStart=false;
         unquotedArgs.push_back(newArg); 
-//cout<<"tokenA=" <<newArg<<"\n";
         quotedNums.insert(argNum);
         if(pos+1<sz and argString[pos+1]!=' ')
           escapedList.insert(argNum);
@@ -122,8 +109,6 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
           newArg=argString.substr(lastSingleQuoteStart+1,((pos-1)-(lastSingleQuoteStart+1)+1));
           singleQuoteStart=false;
           unquotedArgs.push_back(newArg);  
-  //cout<<newArg<<"\n";
-//cout<<"tokenB=" <<newArg<<"\n";
           quotedNums.insert(argNum);
           argNum+=1;        
         } 
@@ -143,9 +128,7 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
             {
               newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
               unquotedArgs.push_back(newArg);
-              escapedList.insert(argNum);   
-//cout<<"tokenC=" <<newArg<<"\n";
-              
+              escapedList.insert(argNum);                
               escapedList.insert(argNum+1); 
               argNum+=1;
             }
@@ -157,8 +140,6 @@ vector<string> getSpecialArg(string argString,set<int>&escapedList)
             newArg=argString.substr(pos+1,1);
             lastWordStart=pos+2;
             unquotedArgs.push_back(newArg);
-            
-//cout<<"tokenD=" <<newArg<<"\n";
             argNum+=1;
             pos+=1;
           }
@@ -186,13 +167,11 @@ remote: [your-program] fail with negative code         : No such file or directo
           if(quotedNums.find(argNum-1)!=quotedNums.end() and argString[pos-1]!='\'' and argString[pos-1]!='\"')
           {
             quotedNums.erase(argNum-1); 
-//cout<<"Erased a token\n";
           }
           if(spaceStart==true) //end any previous word
           {
             newArg=argString.substr(lastWordStart,((pos-2)-lastWordStart+1));
             unquotedArgs.push_back(newArg);
-//cout<<"tokenE=" <<newArg<<"\n";
             spaceStart=false;
             escapedList.insert(argNum);
             argNum+=1;
@@ -209,7 +188,6 @@ remote: [your-program] fail with negative code         : No such file or directo
         {
           newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
           unquotedArgs.push_back(newArg);
-//cout<<"tokenF=" <<newArg<<"\n";
           spaceStart=false;
           argNum+=1;
           
@@ -218,7 +196,6 @@ remote: [your-program] fail with negative code         : No such file or directo
         {
           lastWordStart=pos;
           spaceStart=true;
-//cout<<"check "<<argString[pos]<<"\n";
         }
       }      
       
@@ -228,7 +205,6 @@ remote: [your-program] fail with negative code         : No such file or directo
   {
     newArg=argString.substr(lastWordStart,((sz-1)-lastWordStart+1));
     unquotedArgs.push_back(newArg);
-//cout<<"tokenG=" <<newArg<<"\n";
     argNum+=1;
   }
   //join two or more arguments separated only by quotes
@@ -244,14 +220,12 @@ remote: [your-program] fail with negative code         : No such file or directo
       }
       else
       {
-//cout<<unquotedArgs[agNum]<<")\n";
         quotedMerged.push_back(unquotedArgs[agNum]);        
       }
     }
     
     else
     {
-//cout<<unquotedArgs[agNum]<<")\n";
       quotedMerged.push_back(unquotedArgs[agNum]);      
     }
   }
@@ -308,8 +282,6 @@ int main() {
     { 
       //TODO :Manage single quotes
       string argString=input.substr(5);
-      //cout<<"("<<argString<<")";
-      
       vector <string> unquotedArgs= getSpecialArg(argString,escapedList);
       int uqSz=unquotedArgs.size();
       bool addSpace;
@@ -362,39 +334,27 @@ int main() {
       
         command= getMainArg(input);
         sz2=command.size();
-      
-//cout<<"("<<command<<")\n";
         string paths=string(getenv("PATH"));
         stringstream tokenizer(paths);
         string token;
-
-
-        //parse the path variable into a vector of strings,
-
-        //set flag and break the loop if condition met
-        //check flag and output at the end accordingly
-
+        /*parse the path variable into a vector of strings, set flag and break the loop if condition met
+        check flag and output at the end accordingly*/
+        
         while(getline(tokenizer,token,':'))
         {
           pathVars.push_back(token);
         }
-
-          
+  
         //search executable iterated in a loop over path strings
         for(string pathFolder :pathVars )
         {
-            string totalPath;
-            
+            string totalPath;            
             totalPath= pathFolder+'/'+command.substr(1,sz2-2);
-            
-            
             filesystem::path pth(totalPath);
-            
             flag=flag | (filesystem::exists(pth))    ;
             if(filesystem::exists(pth))
             {
               detectedPathString=totalPath;
-
               break;
             }            
         }
@@ -408,19 +368,14 @@ int main() {
       string paths=string(getenv("PATH"));
       stringstream tokenizer(paths);
       string token;
-      
-      
       //parse the path variable into a vector of strings,
-      
       //set flag and break the loop if condition met
       //check flag and output at the end accordingly
 
       while(getline(tokenizer,token,':'))
       {
         pathVars.push_back(token);
-      }
-      
-        
+      }       
       //search executable iterated in a loop over path strings
       for(string pathFolder :pathVars )
       {
@@ -492,8 +447,6 @@ int main() {
         {
           sz2=command.size();
           arg1=command.substr(1,sz2-2);          
-          //arg1=unescapeWord(arg1);
-//cout<<"("<<arg1<<")\n";
           argString= input.substr(sz2+1);
 
         }    
@@ -510,7 +463,5 @@ int main() {
       }
   
   }
-  //cout<<"yet another output\n";
 }
-//cout<<"yet another yet another output\n";
 }
