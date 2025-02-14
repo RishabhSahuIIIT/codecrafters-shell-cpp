@@ -29,7 +29,7 @@ string getMainArg(string input)
        break;
      }
     }
-    command=input.substr(0,k);
+    command=input.substr(0,k+1);
   }
   else if(input[0]=='\'')
   {
