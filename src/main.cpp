@@ -105,95 +105,114 @@ class builtIn
 	{
 		
 	}
-	void performBuiltInCommand(string firstWord,string argString,pathCheck pathChecker,string outputFileString,string arg2,vector<string>unquotedArgs,string command,set<int>escapedList,int outputRedirecOpPosn)
+	void performBuiltInCommand(string firstWord,string argString,pathCheck pathChecker,string outputFileString,string arg2,vector<string>unquotedArgs,string command,set<int>escapedList,int outputRedirecOpPosn, int stdErrRedirectPosn)
 	{
-			// string command=?;
-			// vector<string>unquotedArgs=?;
-			// set<int>escapedList=?;
+			
 			try
 			{
 				
-			ofstream outputFile;
-			if(outputFileString!="")
-				outputFile.open(outputFileString);
-			else
-				outputFile.open("/dev/stdout");
-			if(firstWord=="exit")
-			{
-				outputFile.close();
-				exit(0);
-			}
-			else if(firstWord=="echo")// basic echo without command substitution
-			{ 
-				
-				int uqSz=unquotedArgs.size();
-				uqSz=min(uqSz,outputRedirecOpPosn);
-				for(int pos=0;pos<uqSz;pos++)
+				ofstream outputFile;
+				ofstream stdErrFile;
+				if(outputFileString!="")
 				{
-					string wd=unquotedArgs[pos];
-					outputFile<<wd;
-					//if escaped then don't add space afterward in echo command
-			
-					if(!(escapedList.find(pos)!=escapedList.end()))
+					if(!filesystem::exists(outputFileString))
+						outputFile=ofstream(outputFileString);
+					else
+						outputFile.open(outputFileString);
+				}
+				else
+					outputFile.open("/dev/stdout");
+				if(stdErrRedirectPosn!=1000000000)
+				{
+					if(!filesystem::exists(unquotedArgs[stdErrRedirectPosn+1]))
+						stdErrFile=ofstream(unquotedArgs[stdErrRedirectPosn+1]);
+					else
+						stdErrFile.open(unquotedArgs[stdErrRedirectPosn+1]);
+					
+				}
+				else
+				{
+					stdErrFile.open("/dev/stderr");
+				}
+				if(firstWord=="exit")
+				{
+					outputFile.close();
+					stdErrFile.close();
+					exit(0);
+				}
+				else if(firstWord=="echo")// basic echo without command substitution
+				{ 
+					
+					int uqSz=unquotedArgs.size();
+					uqSz=min(uqSz,outputRedirecOpPosn);
+					uqSz=min(uqSz,stdErrRedirectPosn);
+					for(int pos=0;pos<uqSz;pos++)
 					{
-						outputFile<<" ";
+						string wd=unquotedArgs[pos];
+						outputFile<<wd;
+						//if escaped then don't add space afterward in echo command
+				
+						if(!(escapedList.find(pos)!=escapedList.end()))
+						{
+							outputFile<<" ";
+						}
+						
+					}
+					outputFile<<"\n";
+					stdErrFile<<"";
+				
+				}
+				else if(firstWord=="pwd")
+				{
+					string directory(get_current_dir_name());
+					outputFile<<directory<<"\n";
+				}
+				else if(firstWord=="type")
+				{
+					pathChecker.searchExecutableForTypeCommand(arg2);
+					if(arg2=="echo" or arg2=="exit" or arg2=="type" or arg2=="pwd")
+					{
+						outputFile<<arg2<<" is a shell builtin\n";
+			
+					}
+					else if(pathChecker.detectedExecutableFlag==true)
+					{
+						outputFile<<arg2<<" is "<<pathChecker.detectedPathString<<"\n";
+					}
+					else
+					{
+						stdErrFile<<arg2<<": not found\n";
 					}
 					
-				}
-				outputFile<<"\n";
-				
-			
-			}
-			else if(firstWord=="pwd")
-			{
-				string directory(get_current_dir_name());
-				outputFile<<directory<<"\n";
-			}
-			else if(firstWord=="type")
-			{
-				pathChecker.searchExecutableForTypeCommand(arg2);
-				if(arg2=="echo" or arg2=="exit" or arg2=="type" or arg2=="pwd")
+				}	
+				else if(firstWord=="cd")
 				{
-					outputFile<<arg2<<" is a shell builtin\n";
-		
-				}
-				else if(pathChecker.detectedExecutableFlag==true)
-				{
-					outputFile<<arg2<<" is "<<pathChecker.detectedPathString<<"\n";
-				}
-				else
-				{
-					outputFile<<arg2<<": not found\n";
-				}
-				  
-			}	
-			else if(firstWord=="cd")
-			{
-				int errorCode;
-				if(arg2=="~")
-				{
-					string pathString= string(getenv("HOME"));
-					errorCode=chdir(pathString.c_str());
-				}
-				else
-				{
-					errorCode=chdir(arg2.c_str());
-				}
-				
-				if(errorCode<0)
-				{
-					outputFile<<"cd: "<<arg2<<": No such file or directory\n";
+					int errorCode;
+					if(arg2=="~")
+					{
+						string pathString= string(getenv("HOME"));
+						errorCode=chdir(pathString.c_str());
+					}
+					else
+					{
+						errorCode=chdir(arg2.c_str());
+					}
 					
+					if(errorCode<0)
+					{
+						
+						stdErrFile<<"cd: "<<arg2<<": No such file or directory\n";
+					}
 				}
-			}
-			else // external command including cat detected in path and needs to be executed from argument list
-			{
+				else 
+				{
 
-				outputFile<<command<<": command not found\n";
+					outputFile<<command<<": command not found\n";
+				}
+			outputFile.close();
+			stdErrFile.close();
 			}
-		  outputFile.close();
-		}
-		  catch(const std::exception& e)
+		  	catch(const std::exception& e)
 			{
 				std::cerr << e.what() << '\n';
 			}
@@ -207,14 +226,19 @@ class parser
 	
 	public:
 	bool outputRedirectionDetect;
-	int redirectionOperatorPosn;
-
+	int opRedirectionOperatorPosn;
+	int stdErrRedirPosn;
+	bool stdErrRedirectionDetect;
 	string outputPath;
+	string stdErrPath;
 	parser()
 	{
 		this->outputRedirectionDetect=false;
 		this->outputPath="";
-		this->redirectionOperatorPosn=1000000000;
+		this->stdErrPath="";
+		this->opRedirectionOperatorPosn=1000000000;
+		this->stdErrRedirPosn=1000000000;
+		this->stdErrRedirectionDetect=false;
 	}
 	/*Return executable path which is leftmost ,  enclosed within quotes if quotes are present*/
 	string getMainArg(string input)
@@ -258,8 +282,11 @@ class parser
 		//reset status of variables required for output redirection
 		this->outputRedirectionDetect=false;
 		this->outputPath="";
-		this->redirectionOperatorPosn=1000000000;
-
+		
+		this->stdErrPath="";
+		this->opRedirectionOperatorPosn=1000000000;
+		this->stdErrRedirPosn=1000000000;
+		this->stdErrRedirectionDetect=false;
 		
 		int sz=argString.size();
 		//Option1: detect escapes and insert double quotes instead 
@@ -416,11 +443,22 @@ class parser
 			if(unquotedArgs[agNum]==">" or unquotedArgs[agNum]=="1>")
 			{
 				this->outputRedirectionDetect=true;
-				this->redirectionOperatorPosn=agNum;
+				this->opRedirectionOperatorPosn=agNum;
 				// need to skip operator and file name to avoid being sent in command arguments.
 				if(agNum+1>=quotedargCount)
 					throw "Missing outputFile Parameter Error";
 				this->outputPath=unquotedArgs[agNum+1]; //until input redirection needs to be supported this should be the output file path
+				
+			}
+			else if (unquotedArgs[agNum]=="2>")
+			{
+				
+				this->stdErrRedirPosn=agNum;
+				// need to skip operator and file name to avoid being sent in command arguments.
+				if(agNum+1>=quotedargCount)
+					throw "Missing stderrTarget For redirection Parameter Error";
+				this->stdErrPath=unquotedArgs[agNum+1];
+				this->stdErrRedirectionDetect=true;
 			}
 
 			//join two or more arguments separated only by quotes 
@@ -482,8 +520,8 @@ class executer
 		//option2: use command name without location ,executing as a shell command
 
 	}
-	/* execute a system command with output redirected to file path instead of stdout*/
-	void executeCommandFileOutputRedir(string mainCommand,vector<char*>argList,string outputFilePath,bool executableFoundFlag)
+	/* execute a system command with stdout or stderr redirected to file path instead */
+	void executeCommandFileRedir(string mainCommand,vector<char*>argList,string outputFilePath,string stdErrFilePath,bool executableFoundFlag)
 	{  
 		if(executableFoundFlag==false)
 		{
@@ -511,7 +549,7 @@ class executer
 			return;
 
 		}
-		if(outputFilePath=="")
+		if(outputFilePath=="" and stdErrFilePath=="")
 		{
 //cout<<"executing without outputRedirection\n";
 			executeCommand(mainCommand,argList);
@@ -521,38 +559,51 @@ class executer
 		int sz=argList.size();
 		int pos=0;
 		int processPid= fork();
-		
+		int fileFD,fileFD2;
 		if(processPid==0)//child
 		{
 			/* redirect write end of pipe of child to put output in file instead of STDOUT*/
 			//replace write end file descriptor of this process with STDOUT
-			int fileFD=open(outputFilePath.c_str(),O_CREAT | O_RDWR);
-			if(fileFD<0)
+
+			if(outputFilePath!="")
 			{
-				throw "Fail to open filePath "+outputFilePath+"with mode"+to_string(O_CREAT|O_RDWR);
+				fileFD=open(outputFilePath.c_str(),O_CREAT | O_RDWR);
+				if(fileFD<0)
+				{
+					throw "Fail to use output file parameter to open filePath  "+outputFilePath+"with mode"+to_string(O_CREAT|O_RDWR);
+				}
+				int status=dup2(fileFD,STDOUT_FILENO);
+				if(status<0)
+				{
+					throw "Fail to duplicate  STDout file descriptor";
+				}
 			}
-			int status=dup2(fileFD,STDOUT_FILENO);
-			if(status<0)
+			if(stdErrFilePath!="")
 			{
-				throw "Fail to duplicate file descriptor";
-			}
+				fileFD2=open(stdErrFilePath.c_str(),O_CREAT | O_RDWR);
+				if(fileFD2<0)
+				{
+					throw "Fail to use stderr file parameter to open filePath "+stdErrFilePath+"with mode"+to_string(O_CREAT|O_RDWR);
+				}
+				int status2=dup2(fileFD2,STDERR_FILENO);
+				if(status2<0)
+				{
+					throw "Fail to duplicate STDerr file descriptor";
+				}
+			}	
 			
-			/*pipe may not be required for output redirection s
-			int pipefds[2];
-			pipe(pipefds);
-			close(pipefds[0]);
-			*/
-			//close unused read end 
+			
 			//execute system command
 			int result = execvp(mainCommand.c_str(), argList.data());
-
-			close(fileFD);//close the open file
-			if(result<0)
-			{
-				cerr<<mainCommand<<"\n";
-				perror("fail with negative code \t");
-				exit(1);
-			} 
+			//close the redirected files for STDOUT and STDERR
+			close(fileFD);
+			close(fileFD2);
+			// if(result<0)
+			// {
+			// 	cerr<<mainCommand<<"\n";
+			// 	perror("fail with negative code \t");
+			// 	exit(1);
+			// } 
 			
 		}
 		else if (processPid>0) //parent
@@ -664,12 +715,14 @@ class Shell
 			unquotedArgs= parseInterface.getSpecialArg(argString,escapedList);
 			for(const string &wd:unquotedArgs)
 			{   
-				if(wd==">" or wd=="1>") //may need to update in case input file redirection path appears later
+				if(wd==">" or wd=="1>")
+					break;
+				if(wd =="2>")
 					break;
 				charArgs.push_back(const_cast<char*>(wd.c_str())); 
 			}
 			charArgs.push_back(nullptr);   
-			executionInterface.executeCommandFileOutputRedir(firstWord,charArgs,parseInterface.outputPath,pathChecker.detectedExecutableFlag);
+			executionInterface.executeCommandFileRedir(firstWord,charArgs,parseInterface.outputPath,parseInterface.stdErrPath,pathChecker.detectedExecutableFlag);
 		
 		
 			
@@ -682,7 +735,7 @@ class Shell
 			else
 				argString="";
 			unquotedArgs= parseInterface.getSpecialArg(argString,escapedList);
-			builtInPerformer.performBuiltInCommand(firstWord,argString,this->pathChecker,parseInterface.outputPath,arg2,unquotedArgs,command,escapedList,parseInterface.redirectionOperatorPosn);
+			builtInPerformer.performBuiltInCommand(firstWord,argString,this->pathChecker,parseInterface.outputPath,arg2,unquotedArgs,command,escapedList,parseInterface.opRedirectionOperatorPosn,parseInterface.stdErrRedirPosn);
 			
 		}
 		
