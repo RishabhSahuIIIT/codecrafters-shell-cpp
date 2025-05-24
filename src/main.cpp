@@ -8,24 +8,218 @@
 #include<sys/wait.h>
 #include<unistd.h>
 #include<fcntl.h>
+#include<fstream>
 using namespace std;
 
 //class dirManage
+class pathCheck
+{
+	public:
+	string detectedPathString;
+	bool detectedExecutableFlag;
+	vector<string>pathVars;
+	/* finds system wide path for given executable if found in PATH and stores in class member
+	variable as well as set flag if detected the path*/
+	void updatePathStringList()
+	{
+		string paths=string(getenv("PATH"));
+		
+		stringstream tokenizer(paths);
+		string token;
+		
+		/*parse the path variable into a vector of strings, set flag and break the loop if condition met
+		check flag and output at the end accordingly*/
+		
+		while(getline(tokenizer,token,':'))
+		{
+			pathVars.push_back(token);
+		}
+
+	}
+	void searchExNameInPath(string arg2)
+	{
+		detectedPathString="";
+		detectedExecutableFlag=false;
+		updatePathStringList();
+		for(string pathFolder :pathVars )
+		{
+			string totalPath;
+			
+			totalPath= pathFolder+'/'+arg2; 
+			
+			filesystem::path pth(totalPath);
+			if(filesystem::exists(pth))
+			{
+				detectedPathString=totalPath;
+				detectedExecutableFlag=true;
+				break;
+			}            
+		}
+	}
+	void searchContainingPath(string commandParsed, int sz2)
+	{
+		detectedPathString="";
+		detectedExecutableFlag=false;
+		updatePathStringList();
+		//search executable iterated in a loop over path strings
+		for(string pathFolder :pathVars )
+		{
+			string totalPath;            
+			totalPath= pathFolder+'/'+commandParsed.substr(1,sz2-2);
+			filesystem::path pth(totalPath);
+			if(filesystem::exists(pth))
+			{
+				detectedPathString=totalPath;
+				detectedExecutableFlag=true;
+			}            
+		}
+	}
+	void searchExecutableForTypeCommand(string arg2)
+	{
+		detectedPathString="";
+		detectedExecutableFlag=false;
+		updatePathStringList();
+		for(string pathFolder :pathVars )
+		{
+			string totalPath;
+			
+			totalPath= pathFolder+'/'+arg2; 
+			
+			filesystem::path pth(totalPath);
+			if(filesystem::exists(pth))
+			{
+				detectedPathString=totalPath;
+				detectedExecutableFlag=true;
+				break;
+			}            
+		}
+	}
+	
+};
+
 
 class builtIn
-{};
+{
+	public:
+	builtIn()
+	{
+		
+	}
+	void performBuiltInCommand(string firstWord,string argString,pathCheck pathChecker,string outputFileString,string arg2,vector<string>unquotedArgs,string command,set<int>escapedList,int outputRedirecOpPosn)
+	{
+			// string command=?;
+			// vector<string>unquotedArgs=?;
+			// set<int>escapedList=?;
+			try
+			{
+				
+			ofstream outputFile;
+			if(outputFileString!="")
+				outputFile.open(outputFileString);
+			else
+				outputFile.open("/dev/stdout");
+			if(firstWord=="exit")
+			{
+				outputFile.close();
+				exit(0);
+			}
+			else if(firstWord=="echo")// basic echo without command substitution
+			{ 
+				
+				int uqSz=unquotedArgs.size();
+				uqSz=min(uqSz,outputRedirecOpPosn);
+				for(int pos=0;pos<uqSz;pos++)
+				{
+					string wd=unquotedArgs[pos];
+					outputFile<<wd;
+					//if escaped then don't add space afterward in echo command
+			
+					if(!(escapedList.find(pos)!=escapedList.end()))
+					{
+						outputFile<<" ";
+					}
+					
+				}
+				outputFile<<"\n";
+				
+			
+			}
+			else if(firstWord=="pwd")
+			{
+				string directory(get_current_dir_name());
+				outputFile<<directory<<"\n";
+			}
+			else if(firstWord=="type")
+			{
+				pathChecker.searchExecutableForTypeCommand(arg2);
+				if(arg2=="echo" or arg2=="exit" or arg2=="type" or arg2=="pwd")
+				{
+					outputFile<<arg2<<" is a shell builtin\n";
+		
+				}
+				else if(pathChecker.detectedExecutableFlag==true)
+				{
+					outputFile<<arg2<<" is "<<pathChecker.detectedPathString<<"\n";
+				}
+				else
+				{
+					outputFile<<arg2<<": not found\n";
+				}
+				  
+			}	
+			else if(firstWord=="cd")
+			{
+				int errorCode;
+				if(arg2=="~")
+				{
+					string pathString= string(getenv("HOME"));
+					errorCode=chdir(pathString.c_str());
+				}
+				else
+				{
+					errorCode=chdir(arg2.c_str());
+				}
+				
+				if(errorCode<0)
+				{
+					outputFile<<"cd: "<<arg2<<": No such file or directory\n";
+					
+				}
+			}
+			else // external command including cat detected in path and needs to be executed from argument list
+			{
+
+				outputFile<<command<<": command not found\n";
+			}
+		  outputFile.close();
+		}
+		  catch(const std::exception& e)
+			{
+				std::cerr << e.what() << '\n';
+			}
+			
+}
+
+};
+
 class parser
 {
+	
+	public:
 	bool outputRedirectionDetect;
 	int redirectionOperatorPosn;
-	public:
+
+	string outputPath;
 	parser()
 	{
 		this->outputRedirectionDetect=false;
+		this->outputPath="";
+		this->redirectionOperatorPosn=1000000000;
 	}
-	/*Return executable path which is leftmost and  enclosed within quotes */
+	/*Return executable path which is leftmost ,  enclosed within quotes if quotes are present*/
 	string getMainArg(string input)
 	{
+		
 		string command="";
 		int sz=input.size();
 		int k;
@@ -57,21 +251,30 @@ class parser
 		return command;
 	}
 
-	/*separate the single quoted arguments apart from executable or command name*/
+	/*separate the single quoted arguments apart from executable or command name, and store 
+	indexes of escaped words for echo command*/
 	vector<string> getSpecialArg(string argString,set<int>&escapedList)
 	{
-	
+		//reset status of variables required for output redirection
+		this->outputRedirectionDetect=false;
+		this->outputPath="";
+		this->redirectionOperatorPosn=1000000000;
+
+		
 		int sz=argString.size();
 		//Option1: detect escapes and insert double quotes instead 
 		vector<string>unquotedArgs;
+		if(argString=="")
+		{
+			return unquotedArgs;	
+		}
 		bool singleQuoteStart=false;
 		int lastSingleQuoteStart=0;
 		string newArg;
 		bool spaceStart=true;
 		int lastWordStart=0;
 		int argNum=0;
-		set<int>quotedNums;
-		bool escapeLock=false;
+		set<int>quotedNums; // add indexes of words present within quotess
 		//special characters for double quotes  ‘$’, ‘`’, ‘"’, ‘\’, 
 		bool doubleQuoteStart=false;
 		int lastDoubleQuoteStart=0;
@@ -88,16 +291,15 @@ class parser
 					unquotedArgs.push_back(newArg); 
 					quotedNums.insert(argNum);
 					if(pos+1<sz and argString[pos+1]!=' ')
-					escapedList.insert(argNum);
+						escapedList.insert(argNum);
 					argNum+=1;        
 				}
 				else if(argString[pos]=='\\')//backslash within double quotes
 				{
 					if(argString[pos+1]=='\\' or argString[pos+1]=='`' or argString[pos+1]=='$' or argString[pos+1]=='\"')
 					{
-					argString.erase(pos,1);
-					sz=argString.size();
-					
+						argString.erase(pos,1);
+						sz=argString.size();
 					}
 				}
 			}
@@ -110,7 +312,7 @@ class parser
 					spaceStart=false;
 					if(quotedNums.find(argNum-1)!=quotedNums.end() and argString[pos-1]!='\'' and argString[pos-1]!='\"')
 					{
-					quotedNums.erase(argNum-1);   
+						quotedNums.erase(argNum-1);   
 					}
 				}
 				else if (singleQuoteStart==true)
@@ -118,15 +320,15 @@ class parser
 					if (argString[pos]=='\'' ) //close previously started single quote
 					{
 					//extra pos-1 and lastSingleQuoteStart+1 to remove quotes
-					newArg=argString.substr(lastSingleQuoteStart+1,((pos-1)-(lastSingleQuoteStart+1)+1));
-					singleQuoteStart=false;
-					unquotedArgs.push_back(newArg);  
-					quotedNums.insert(argNum);
-					argNum+=1;        
+						newArg=argString.substr(lastSingleQuoteStart+1,((pos-1)-(lastSingleQuoteStart+1)+1));
+						singleQuoteStart=false;
+						unquotedArgs.push_back(newArg);  
+						quotedNums.insert(argNum);
+						argNum+=1;        
 					} 
 					else if(argString[pos]!='\'' )
 					{
-					continue;
+						continue;
 					}
 				}
 				//cases without quote
@@ -134,27 +336,27 @@ class parser
 				{
 					if(argString[pos]=='\\')// backslash outside any quotes
 					{          
-					if(pos+1<sz ) // if previous was space then the word preceding is already stored
-					{
-						if(spaceStart==true) //need to store any preceding lettered word as well
+						if(pos+1<sz ) // if previous was space then the word preceding is already stored
 						{
-						newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
-						unquotedArgs.push_back(newArg);
-						escapedList.insert(argNum);                
-						escapedList.insert(argNum+1); 
-						argNum+=1;
+							if(spaceStart==true) //need to store any preceding lettered word as well
+							{
+								newArg=argString.substr(lastWordStart,((pos-1)-lastWordStart+1));
+								unquotedArgs.push_back(newArg);
+								escapedList.insert(argNum);                
+								escapedList.insert(argNum+1); 
+								argNum+=1;
+							}
+							else
+							{
+								escapedList.insert(argNum+1);
+							
+							}
+							newArg=argString.substr(pos+1,1);
+							lastWordStart=pos+2;
+							unquotedArgs.push_back(newArg);
+							argNum+=1;
+							pos+=1;
 						}
-						else
-						{
-						escapedList.insert(argNum+1);
-						
-						}
-						newArg=argString.substr(pos+1,1);
-						lastWordStart=pos+2;
-						unquotedArgs.push_back(newArg);
-						argNum+=1;
-						pos+=1;
-					}
 					}
 					else if( argString[pos]=='\'')//single quote starts
 					{
@@ -215,6 +417,10 @@ class parser
 			{
 				this->outputRedirectionDetect=true;
 				this->redirectionOperatorPosn=agNum;
+				// need to skip operator and file name to avoid being sent in command arguments.
+				if(agNum+1>=quotedargCount)
+					throw "Missing outputFile Parameter Error";
+				this->outputPath=unquotedArgs[agNum+1]; //until input redirection needs to be supported this should be the output file path
 			}
 
 			//join two or more arguments separated only by quotes 
@@ -239,90 +445,6 @@ class parser
 	}
 
 };
-class pathCheck
-{
-	public:
-	string detectedPathString;
-	bool flag;
-	vector<string>pathVars;
-	/* finds system wide path for given executable if found in PATH and stores in class member
-	variable as well as set flag if detected the path*/
-	void updatePathStringList()
-	{
-		string paths=string(getenv("PATH"));
-		
-		stringstream tokenizer(paths);
-		string token;
-		
-		/*parse the path variable into a vector of strings, set flag and break the loop if condition met
-		check flag and output at the end accordingly*/
-		
-		while(getline(tokenizer,token,':'))
-		{
-			pathVars.push_back(token);
-		}
-
-	}
-	void searchExNameInPath(string arg2)
-	{
-		detectedPathString="";
-		flag=false;
-		updatePathStringList();
-		for(string pathFolder :pathVars )
-		{
-			string totalPath;
-			
-			totalPath= pathFolder+'/'+arg2; 
-			
-			filesystem::path pth(totalPath);
-			if(filesystem::exists(pth))
-			{
-				detectedPathString=totalPath;
-				flag=true;
-				break;
-			}            
-		}
-	}
-	void searchContainingPath(string commandParsed, int sz2)
-	{
-		detectedPathString="";
-		flag=false;
-		updatePathStringList();
-		//search executable iterated in a loop over path strings
-		for(string pathFolder :pathVars )
-		{
-			string totalPath;            
-			totalPath= pathFolder+'/'+commandParsed.substr(1,sz2-2);
-			filesystem::path pth(totalPath);
-			if(filesystem::exists(pth))
-			{
-				detectedPathString=totalPath;
-				flag=true;
-			}            
-		}
-	}
-	void searchExecutableForTypeCommand(string arg2)
-	{
-		detectedPathString="";
-		flag=false;
-		updatePathStringList();
-		for(string pathFolder :pathVars )
-		{
-			string totalPath;
-			
-			totalPath= pathFolder+'/'+arg2; 
-			
-			filesystem::path pth(totalPath);
-			if(filesystem::exists(pth))
-			{
-				detectedPathString=totalPath;
-				flag=true;
-				break;
-			}            
-		}
-	}
-	
-};
 class executer
 {
 	
@@ -333,32 +455,115 @@ class executer
 	}
 	void executeCommand(string mainCommand,vector<char*>argList)
 	{  
-	int sz=argList.size();
-	int pos=0;
-	int processPid= fork();
-	if(processPid==0)//child
-	{
-		int result = execvp(mainCommand.c_str(), argList.data());
-		if(result<0)
+		int sz=argList.size();
+		int pos=0;
+		int processPid= fork();
+		if(processPid==0)//child
 		{
-		cerr<<mainCommand<<"\n";
-		perror("fail with negative code \t");
-		exit(1);
-		} 
-	}
-	else if (processPid>0) //parent
-	{
-		int status;
-		waitpid(processPid, &status, 0);
-	}
-	else // process pid ==-1 or error
-	{
-		cout<<"Error";
-	}
+			int result = execvp(mainCommand.c_str(), argList.data());
+			if(result<0)
+			{
+			cerr<<mainCommand<<"\n";
+			perror("fail with negative code \t");
+			exit(1);
+			} 
+		}
+		else if (processPid>0) //parent
+		{
+			int status;
+			waitpid(processPid, &status, 0);
+		}
+		else // process pid ==-1 or error
+		{
+			cout<<"Error";
+		}
 
-	//option1 : use location of command and execute as a normal program
-	//option2: use command name without location ,executing as a shell command
+		//option1 : use location of command and execute as a normal program
+		//option2: use command name without location ,executing as a shell command
 
+	}
+	/* execute a system command with output redirected to file path instead of stdout*/
+	void executeCommandFileOutputRedir(string mainCommand,vector<char*>argList,string outputFilePath,bool executableFoundFlag)
+	{  
+		if(executableFoundFlag==false)
+		{
+			ofstream outputFile;
+			try{
+			if(outputFilePath=="")
+				cout<<mainCommand<<": command not found\n";
+			else
+			{
+				outputFile.open(outputFilePath);
+				outputFile<<mainCommand<<": command not found\n";
+				outputFile.close();
+			}
+			
+			
+			}
+			catch(exception e){
+				cout<<"Exception detected\n";
+				cout<<e.what()<<"\n";
+				cout<<"Main command was("<<mainCommand<<")\n";
+				for (auto val: argList)
+					cout<<"Next Argument provided was("<<val<<")\n";
+			}
+			//outputFile.close();
+			return;
+
+		}
+		if(outputFilePath=="")
+		{
+//cout<<"executing without outputRedirection\n";
+			executeCommand(mainCommand,argList);
+
+			return;
+		}
+		int sz=argList.size();
+		int pos=0;
+		int processPid= fork();
+		
+		if(processPid==0)//child
+		{
+			/* redirect write end of pipe of child to put output in file instead of STDOUT*/
+			//replace write end file descriptor of this process with STDOUT
+			int fileFD=open(outputFilePath.c_str(),O_CREAT | O_RDWR);
+			if(fileFD<0)
+			{
+				throw "Fail to open filePath "+outputFilePath+"with mode"+to_string(O_CREAT|O_RDWR);
+			}
+			int status=dup2(fileFD,STDOUT_FILENO);
+			if(status<0)
+			{
+				throw "Fail to duplicate file descriptor";
+			}
+			
+			/*pipe may not be required for output redirection s
+			int pipefds[2];
+			pipe(pipefds);
+			close(pipefds[0]);
+			*/
+			//close unused read end 
+			//execute system command
+			int result = execvp(mainCommand.c_str(), argList.data());
+
+			close(fileFD);//close the open file
+			if(result<0)
+			{
+				cerr<<mainCommand<<"\n";
+				perror("fail with negative code \t");
+				exit(1);
+			} 
+			
+		}
+		else if (processPid>0) //parent
+		{
+			int status;
+			waitpid(processPid, &status, 0);
+		}
+		else // process pid ==-1 or error
+		{
+			cout<<"Error";
+		}
 	}
 
 };
@@ -370,14 +575,17 @@ class Shell
 	string input;
 	parser parseInterface;
 	executer executionInterface;
+	builtIn builtInPerformer;
 	set<string>builtInsList;
 	pathCheck pathChecker;
+	
 	public:
-	Shell(parser parserObject, executer executerObject,pathCheck pathChecker)
+	Shell(parser parserObject, executer executerObject,pathCheck pathChecker,builtIn builtINExecuter)
 	{
 		this->parseInterface=parserObject;
 		this->executionInterface=executerObject;
 		this->pathChecker=pathChecker;
+		this->builtInPerformer=builtINExecuter;
 		this->builtInsList.insert("cd");
 		this->builtInsList.insert("type");
 		this->builtInsList.insert("pwd");
@@ -396,25 +604,26 @@ class Shell
 		
 	void handleInput(string command)
 	{
-		set<int>escapedList;
+		set<int>escapedList;//if word is escaped then while printing in echo command no space added afterward
 		string firstWord;
 		stringstream ss;
+		string arg2;
 		ss<<command;
 		ss>>firstWord;
-		string arg2;
+		ss>>arg2;
 		//not builtin
+		string argString="";
+		
+		vector<string>unquotedArgs;
 		if(this->builtInsList.find(firstWord)==this->builtInsList.end())
 		{
 
-			bool flag;
 			string commandParsed;
 			int sz2;
-			string argString;
 			//QUOTED EXECUTABLE PATH
 			if(command[0]=='\'' or command[0]=='\"')
 			{
-			
-				commandParsed= parseInterface.getMainArg(command);
+				commandParsed= parseInterface.getMainArg(command);//extract command name including quotes
 				sz2=commandParsed.size();
 				pathChecker.searchContainingPath(commandParsed,sz2);
 			}
@@ -424,135 +633,56 @@ class Shell
 		      search executable iterated in a loop over path strings*/
 			else //SIMPLE UNQOUTED EXECUTABLE NAME
 		    {
-		      
+			  commandParsed=command;
 		      pathChecker.searchExNameInPath(firstWord);
-		
 		    }
 
-			if(pathChecker.flag==true)//command is found
-			{
-				int inputSz=command.size();
-				int ag1Size=firstWord.size();
-				if(command[0]!='\'' and command[0]!='\"')
-				argString=command.substr(ag1Size+1);    
-				else
-				{
-				sz2=commandParsed.size();
-				firstWord=commandParsed.substr(1,sz2-2);          
-				argString= command.substr(sz2+1);
-		
-				}    
-				
-				vector <string> unquotedArgs= parseInterface.getSpecialArg(argString,escapedList);
-				vector<char* >charArgs;
-				charArgs.push_back(const_cast<char*>(firstWord.c_str()));
-				for(const string &wd:unquotedArgs)
-				{   
-					charArgs.push_back(const_cast<char*>(wd.c_str())); 
-				}
-				charArgs.push_back(nullptr);        
-				executionInterface.executeCommand(firstWord,charArgs);
+			//now for both cases when command is present and not present
+			int inputSz=command.size();
+			int ag1Size=firstWord.size();
+			vector<char* >charArgs;
 			
-			}
-			else
+			if(commandParsed==firstWord)
 			{
-				cout<<command<<": command not found\n";
+				argString="";
+				
 			}
+			else if(command[0]!='\'' and command[0]!='\"')
+			{
+				argString=command.substr(ag1Size+1);    
+				
+			}
+			else //first word has quotes, 
+			{
+				sz2=commandParsed.size();
+				firstWord=command.substr(1,sz2-2);//now quotes removed          
+				argString= command.substr(sz2+1);
+				
+		
+			}    
+			charArgs.push_back(const_cast<char*>(firstWord.c_str()));
+			unquotedArgs= parseInterface.getSpecialArg(argString,escapedList);
+			for(const string &wd:unquotedArgs)
+			{   
+				if(wd==">" or wd=="1>") //may need to update in case input file redirection path appears later
+					break;
+				charArgs.push_back(const_cast<char*>(wd.c_str())); 
+			}
+			charArgs.push_back(nullptr);   
+			executionInterface.executeCommandFileOutputRedir(firstWord,charArgs,parseInterface.outputPath,pathChecker.detectedExecutableFlag);
+		
+		
+			
 	
 		}
 		else
 		{
-
-			if(firstWord=="exit")
-			{
-				exit(0);
-			}
-			else if(firstWord=="echo")// basic echo without command substitution
-			{ 
-				string argString=command.substr(5);
-				vector <string> unquotedArgs= parseInterface.getSpecialArg(argString,escapedList);
-				int uqSz=unquotedArgs.size();
-				bool addSpace;
-				
-				for(int pos=0;pos<uqSz;pos++)
-				{
-				string wd=unquotedArgs[pos];
-				cout<<wd;
-				//if escaped then don't add space afterward?
-		
-				if(escapedList.find(pos)!=escapedList.end())
-				{
-					addSpace=false;
-				}
-				else 
-				{
-				addSpace=true; 
-				}
-				
-				if(addSpace)
-				{
-					cout<<" ";
-				}
-		
-		
-				}
-				cout<<"\n";
-				
-			
-			}
-			else if(firstWord=="pwd")
-			{
-				string directory(get_current_dir_name());
-				cout<<directory<<"\n";
-			}
+			if(firstWord!=command)
+				argString=command.substr(firstWord.size()+1);
 			else
-			{
-				if(firstWord=="type")
-				{
-					ss>>arg2;
-		      	
-				  	pathChecker.searchExecutableForTypeCommand(arg2);
-					if(arg2=="echo" or arg2=="exit" or arg2=="type" or arg2=="pwd")
-					{
-					cout<<arg2<<" is a shell builtin\n";
-			
-					}
-					else if(pathChecker.flag==true)
-					{
-						cout<<arg2<<" is "<<pathChecker.detectedPathString<<"\n";
-					}
-					else
-					{
-					cout<<arg2<<": not found\n";
-					}
-				}
-			else if(firstWord=="cd")
-			{
-				ss>>arg2;
-				int errorCode;
-				if(arg2=="~")
-				{
-				string pathString= string(getenv("HOME"));
-				errorCode=chdir(pathString.c_str());
-				}
-				else
-				{
-				errorCode=chdir(arg2.c_str());
-				}
-				
-				if(errorCode<0)
-				{
-					cout<<"cd: "<<arg2<<": No such file or directory\n";
-					
-				}
-			}  
-			
-	      else // external command including cat detected in path and needs to be executed from argument list
-	      {
-	        cout<<command<<": command not found\n";
-	      }
-	  
-			}
+				argString="";
+			unquotedArgs= parseInterface.getSpecialArg(argString,escapedList);
+			builtInPerformer.performBuiltInCommand(firstWord,argString,this->pathChecker,parseInterface.outputPath,arg2,unquotedArgs,command,escapedList,parseInterface.redirectionOperatorPosn);
 			
 		}
 		
@@ -564,7 +694,6 @@ class Shell
 			cout<<"$ ";
 	    	getline(std::cin, input);
 	    	handleInput(input); 
-		
 		}
 		
 	}
@@ -579,7 +708,8 @@ int main() {
 		parser parserObject= parser();
 		executer executionObject=executer();
 		pathCheck pathResolver= pathCheck();
-		Shell shell=  Shell(parserObject,executionObject,pathResolver);
+		builtIn builtInPerformer= builtIn();
+		Shell shell=  Shell(parserObject,executionObject,pathResolver,builtInPerformer);
 		shell.run();
 	
  	}
