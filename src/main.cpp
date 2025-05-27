@@ -15,7 +15,6 @@ using namespace std;
 #define WRITE_OPTION 1
 #define APPEND_OPTION 2
 
-//class dirManage
 class pathCheck
 {
 	public:
@@ -326,7 +325,7 @@ class parser
 				this->opRedirectionOperatorPosn=agNum;
 				// need to skip operator and file name to avoid being sent in command arguments.
 				if(agNum+1>=quotedargCount)
-					throw "Missing outputFile Parameter Error";
+					throw runtime_error("Missing outputFile Parameter Error on line"+std::to_string(__LINE__));
 				this->outputPath=unquotedArgs[agNum+1]; //until input redirection needs to be supported this should be the output file path
 				
 			}
@@ -336,7 +335,7 @@ class parser
 				this->opRedirectionOperatorPosn=agNum;
 				// need to skip operator and file name to avoid being sent in command arguments.
 				if(agNum+1>=quotedargCount)
-					throw "Missing outputFile Parameter Error";
+					throw runtime_error("Missing outputFile Parameter Error on line"+std::to_string(__LINE__));
 				this->outputPath=unquotedArgs[agNum+1]; //until input redirection needs to be supported this should be the output file path
 			}
 			else if (unquotedArgs[agNum]=="2>")
@@ -345,9 +344,18 @@ class parser
 				this->stdErrRedirPosn=agNum;
 				// need to skip operator and file name to avoid being sent in command arguments.
 				if(agNum+1>=quotedargCount)
-					throw "Missing stderrTarget For redirection Parameter Error";
+					throw runtime_error("missing stdErrFile parameter Error on line "+std::to_string(__LINE__));
 				this->stdErrPath=unquotedArgs[agNum+1];
 				this->stdErrRedirectionStatus=true;
+			}
+			else if( unquotedArgs[agNum]=="2>>")
+			{
+				this->stdErrRedirectionStatus=APPEND_OPTION;
+				this->stdErrRedirPosn=agNum;
+				// need to skip operator and file name to avoid being sent in command arguments.
+				if(agNum+1>=quotedargCount)
+					throw runtime_error("missing stdErrFile parameter Error on line "+std::to_string(__LINE__));
+				this->outputPath=unquotedArgs[agNum+1]; 
 			}
 
 			//join two or more arguments separated only by quotes 
@@ -388,6 +396,7 @@ class builtIn
 		int outputRedirecOpPosn=parseInterface.opRedirectionOperatorPosn;
 		int stdErrRedirectPosn=parseInterface.stdErrRedirPosn;
 		int opRedirecStatus=parseInterface.outputRedirectionStatus;
+		int stdErrStatus=parseInterface.stdErrRedirectionStatus;
 			try
 			{
 				
@@ -413,10 +422,13 @@ class builtIn
 				}
 				else
 				{
-					cerr<<"Invalid option";
+					throw runtime_error("Incorrect output redirection option detected in line number"+std::to_string(__LINE__));
 				}
-				
-				if(stdErrRedirectPosn!=1000000000)
+				if(stdErrStatus==NO_OPTION)
+				{
+					stdErrFile.open("/dev/stderr");
+				}
+				else if(stdErrStatus==WRITE_OPTION)
 				{
 					if(!filesystem::exists(stdErrFileString))
 						stdErrFile=ofstream(stdErrFileString);
@@ -424,9 +436,16 @@ class builtIn
 						stdErrFile.open(stdErrFileString);
 					
 				}
+				else if(stdErrStatus==APPEND_OPTION)
+				{
+					if(!filesystem::exists(outputFileString))
+						stdErrFile=ofstream(outputFileString,ios_base::app);
+					else
+						stdErrFile.open(outputFileString,ios_base::app);
+				}
 				else
 				{
-					stdErrFile.open("/dev/stderr");
+					throw runtime_error("Incorrect output redirection option detected in line number"+std::to_string(__LINE__));
 				}
 				if(firstWord=="exit")
 				{
@@ -546,15 +565,11 @@ class executer
 		}
 		else // process pid ==-1 or error
 		{
-			cout<<"Error";
+			throw runtime_error("Error in process creation detected on line number "+std::to_string(__LINE__));
 		}
-
-		//option1 : use location of command and execute as a normal program
-		//option2: use command name without location ,executing as a shell command
 
 	}
 	/* execute a system command with stdout or stderr redirected to file path instead */
-	//void executeCommandFileRedir(string mainCommand,vector<char*>argList,string outputFilePath,string stdErrFilePath,bool executableFoundFlag)
 	void executeCommandFileRedir(string mainCommand,vector<char*>argList,parser parseInterface,bool executableFoundFlag)
 	{  
 		string outputFilePath=parseInterface.outputPath;
@@ -577,11 +592,11 @@ class executer
 			
 			}
 			catch(exception e){
-				cout<<"Exception detected\n";
-				cout<<e.what()<<"\n";
-				cout<<"Main command was("<<mainCommand<<")\n";
+				cerr<<"Exception detected\n";
+				cerr<<e.what()<<"\n";
+				cerr<<"Main command was("<<mainCommand<<")\n";
 				for (auto val: argList)
-					cout<<"Next Argument provided was("<<val<<")\n";
+					cerr<<"Next Argument provided was("<<val<<")\n";
 			}
 			
 			return;
@@ -621,15 +636,25 @@ class executer
 			}
 			else if(opRedirectStatus!= NO_OPTION)
 			{
-				throw exception();
+				throw runtime_error("Invalid output Redirection Status detected on line number"+std::to_string(__LINE__));
 			}
-			if(stdErrFilePath!="")
+			if(stdRedirectStatus==WRITE_OPTION)
 			{
 				fileFD2=open(stdErrFilePath.c_str(),O_CREAT | O_RDWR);
 				
 				status2=dup2(fileFD2,STDERR_FILENO);
 				
 			}	
+			else if(stdRedirectStatus==APPEND_OPTION)
+			{
+				fileFD=open(outputFilePath.c_str(),O_CREAT | O_APPEND|O_RDWR, 0644);
+				
+				status=dup2(fileFD,STDERR_FILENO);
+			}
+			else if(stdRedirectStatus!=NO_OPTION)
+			{
+				throw runtime_error("Invalid stderr Redirection Status detected on line number"+std::to_string(__LINE__));
+			}
 			
 			
 			//execute system command
@@ -639,11 +664,7 @@ class executer
 				close(fileFD);
 			if(stdRedirectStatus!=NO_OPTION)
 				close(fileFD2);
-			// if(result<0)
-			// {
-			// 	perror("Error encountered in execvp operation");
-			// 	throw "Execvp failed";
-			// }
+			
 			
 		}
 		else if (processPid>0) //parent
@@ -653,7 +674,7 @@ class executer
 		}
 		else // process pid ==-1 or error
 		{
-			cout<<"Error";
+			throw runtime_error("Error in process ccreation detected on line number"+std::to_string(__LINE__));
 		}
 	}
 
@@ -755,7 +776,7 @@ class Shell
 			unquotedArgs= parseInterface.getSpecialArg(argString,escapedList);
 			for(const string &wd:unquotedArgs)
 			{   
-				if(wd==">" or wd=="1>" or wd==">>" or wd =="1>>" or wd=="2>")
+				if(wd==">" or wd=="1>" or wd==">>" or wd =="1>>" or wd=="2>" or wd=="2>>")
 					break;
 				charArgs.push_back(const_cast<char*>(wd.c_str())); 
 			}
@@ -773,8 +794,6 @@ class Shell
 			else
 				argString="";
 			unquotedArgs= parseInterface.getSpecialArg(argString,escapedList);
-			//performBuiltInCommand(string firstWord,string argString,pathCheck pathChecker,parser parseInterface,string arg2,vector<string>unquotedArgs,string command,set<int>escapedList)
-			//void performBuiltInCommand(string firstWord,string argString,pathCheck pathChecker,string outputFileString,string arg2,vector<string>unquotedArgs,string command,set<int>escapedList,int outputRedirecOpPosn, int stdErrRedirectPosn)
 			builtInPerformer.performBuiltInCommand(firstWord,argString,this->pathChecker,parseInterface,arg2,unquotedArgs,command,escapedList);
 			
 		}
