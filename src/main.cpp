@@ -9,11 +9,70 @@
 #include<unistd.h>
 #include<fcntl.h>
 #include<fstream>
+#include<readline/readline.h>
 using namespace std;
 
 #define NO_OPTION 0
 #define WRITE_OPTION 1
 #define APPEND_OPTION 2
+
+set<string>builtInList={"cd","type","pwd","exit","echo"};
+//use autocompletion primitives while taking input
+
+class completer
+{
+	public:
+	
+	static char* completion_generator(const char* text, int state) {
+		// This function is called with state=0 the first time; subsequent calls are
+		// with a nonzero state. state=0 can be used to perform one-time
+		// initialization for this completion session.
+		vector<string>vocabulary= vector<string>(builtInList.begin(),builtInList.end());
+		static std::vector<std::string> matches;
+		static size_t match_index = 0;
+
+		if (state == 0) {
+			// During initialization, compute the actual matches for 'text' and keep
+			// them in a static vector.
+			matches.clear();
+			match_index = 0;
+
+			// Collect a vector of matches: vocabulary words that begin with text.
+			std::string textstr = std::string(text);
+			for (auto word : vocabulary) {
+			if (word.size() >= textstr.size() &&
+				word.compare(0, textstr.size(), textstr) == 0) {
+				matches.push_back(word);
+			}
+			}
+		}
+
+		if (match_index >= matches.size()) {
+			// We return nullptr to notify the caller no more matches are available.
+			return nullptr;
+		} else {
+			// Return a malloc'd char* for the match. The caller frees it.
+			return strdup(matches[match_index++].c_str());
+		}
+		}
+	static char** completion(const char* text, int start, int end) {
+  // Don't do filename completion even if our generator finds no matches.
+  rl_attempted_completion_over = 1;
+
+  // Note: returning nullptr here will make readline use the default filename
+  // completer.
+  return rl_completion_matches(text,completion_generator);//SOME ISSUE SINCE MY CODE HAS THIS AS A METHOD, NOT SEPARATE FUNCITON
+}
+	string getInput()
+	{
+		
+		rl_attempted_completion_function = completion;
+		char * buf;
+		buf =readline("$ ");//read until it encounters a newline
+		return string(buf);
+	}
+	
+};
 
 class pathCheck
 {
@@ -690,19 +749,17 @@ class Shell
 	builtIn builtInPerformer;
 	set<string>builtInsList;
 	pathCheck pathChecker;
+	completer autoC;
 	
 	public:
-	Shell(parser parserObject, executer executerObject,pathCheck pathChecker,builtIn builtINExecuter)
+	Shell(parser parserObject, executer executerObject,pathCheck pathChecker,builtIn builtINExecuter, completer autoCompleter)
 	{
 		this->parseInterface=parserObject;
 		this->executionInterface=executerObject;
 		this->pathChecker=pathChecker;
 		this->builtInPerformer=builtINExecuter;
-		this->builtInsList.insert("cd");
-		this->builtInsList.insert("type");
-		this->builtInsList.insert("pwd");
-		this->builtInsList.insert("exit");
-		this->builtInsList.insert("echo");
+		this->autoC=autoCompleter;
+		
 	}
 	//NEW APPROACH
 			//pick first word 
@@ -727,7 +784,7 @@ class Shell
 		string argString="";
 		
 		vector<string>unquotedArgs;
-		if(this->builtInsList.find(firstWord)==this->builtInsList.end())
+		if(builtInList.find(firstWord)==builtInList.end())
 		{
 
 			string commandParsed;
@@ -801,10 +858,13 @@ class Shell
 	}
 	void run()
 	{
+		
 		while(true)
 	  	{
-			cout<<"$ ";
-	    	getline(std::cin, input);
+			//cout<<"$ ";
+			// use readline for autocompletion
+			string input=this->autoC.getInput();
+	    	
 	    	handleInput(input); 
 		}
 		
@@ -821,7 +881,8 @@ int main() {
 		executer executionObject=executer();
 		pathCheck pathResolver= pathCheck();
 		builtIn builtInPerformer= builtIn();
-		Shell shell=  Shell(parserObject,executionObject,pathResolver,builtInPerformer);
+		completer autoCompletionInterface=completer();
+		Shell shell=  Shell(parserObject,executionObject,pathResolver,builtInPerformer,autoCompletionInterface);
 		shell.run();
 	
  	}
