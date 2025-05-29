@@ -1,4 +1,4 @@
-#include <iostream>
+#include<iostream>
 #include<cstdlib>
 #include<sstream>
 #include<cstring>
@@ -17,6 +17,7 @@ using namespace std;
 #define APPEND_OPTION 2
 
 set<string>builtInList={"cd","type","pwd","exit","echo"};
+set<string>executableList;
 //use autocompletion primitives while taking input
 
 class completer
@@ -28,6 +29,7 @@ class completer
 		// with a nonzero state. state=0 can be used to perform one-time
 		// initialization for this completion session.
 		vector<string>vocabulary= vector<string>(builtInList.begin(),builtInList.end());
+		vector<string>vocabulary2=vector<string>(executableList.begin(),executableList.end());
 		static std::vector<std::string> matches;
 		static size_t match_index = 0;
 
@@ -40,6 +42,12 @@ class completer
 			// Collect a vector of matches: vocabulary words that begin with text.
 			std::string textstr = std::string(text);
 			for (auto word : vocabulary) {
+			if (word.size() >= textstr.size() &&
+				word.compare(0, textstr.size(), textstr) == 0) {
+				matches.push_back(word);
+			}
+			}
+			for (auto word : vocabulary2) {
 			if (word.size() >= textstr.size() &&
 				word.compare(0, textstr.size(), textstr) == 0) {
 				matches.push_back(word);
@@ -68,6 +76,7 @@ class completer
 		
 		rl_attempted_completion_function = completion;
 		char * buf;
+		//supports autocomplete and arrow keys editing for input and adds extra space after autocompleted string
 		buf =readline("$ ");//read until it encounters a newline
 		return string(buf);
 	}
@@ -80,12 +89,28 @@ class pathCheck
 	string detectedPathString;
 	bool detectedExecutableFlag;
 	vector<string>pathVars;
+	/*Store list of executables names in path for autocompletion*/
+	void updateExecutablesInPath()
+	{
+		updatePathStringList();
+		//suppose path strings have been populated already
+		for(string & pathValue:pathVars)
+		{
+			//look at each executable within this pathValue folder and fill it in autocompletion list
+		    filesystem::path dirPath(pathValue);
+			for(auto &iter : filesystem::directory_iterator(dirPath))
+			{
+				string pName= iter.path().filename();
+				executableList.insert(pName);
+			}
+			
+		}
+	}
 	/* finds system wide path for given executable if found in PATH and stores in class member
 	variable as well as set flag if detected the path*/
 	void updatePathStringList()
 	{
-		string paths=string(getenv("PATH"));
-		
+		string paths=string(getenv("PATH"));	
 		stringstream tokenizer(paths);
 		string token;
 		
@@ -613,8 +638,9 @@ class executer
 			if(result<0)
 			{
 			cerr<<mainCommand<<"\n";
-			perror("fail with negative code \t");
-			exit(1);
+			
+			throw runtime_error("Error in process execution detected on line number "+std::to_string(__LINE__));
+			
 			} 
 		}
 		else if (processPid>0) //parent
@@ -639,13 +665,17 @@ class executer
 		{
 			ofstream outputFile;
 			try{
-			if(outputFilePath=="")
+			if(opRedirectStatus==NO_OPTION)
 				cout<<mainCommand<<": command not found\n";
-			else
+			else if(opRedirectStatus==WRITE_OPTION or opRedirectStatus==APPEND_OPTION)
 			{
 				outputFile.open(outputFilePath);
 				outputFile<<mainCommand<<": command not found\n";
 				outputFile.close();
+			}
+			else
+			{
+				throw runtime_error("invalid opRedirect status");
 			}
 			
 			
@@ -752,7 +782,8 @@ class Shell
 	completer autoC;
 	
 	public:
-	Shell(parser parserObject, executer executerObject,pathCheck pathChecker,builtIn builtINExecuter, completer autoCompleter)
+	/*passing class objects by reference*/
+	Shell(parser &parserObject, executer& executerObject,pathCheck& pathChecker,builtIn& builtINExecuter, completer& autoCompleter)
 	{
 		this->parseInterface=parserObject;
 		this->executionInterface=executerObject;
@@ -804,6 +835,7 @@ class Shell
 		    {
 			  commandParsed=command;
 		      pathChecker.searchExNameInPath(firstWord);
+			  
 		    }
 
 			//now for both cases when command is present and not present
@@ -811,7 +843,7 @@ class Shell
 			int ag1Size=firstWord.size();
 			vector<char* >charArgs;
 			
-			if(commandParsed==firstWord)
+			if(commandParsed==firstWord)//true if arguments not present
 			{
 				argString="";
 				
@@ -824,10 +856,9 @@ class Shell
 			else //first word has quotes, 
 			{
 				sz2=commandParsed.size();
-				firstWord=command.substr(1,sz2-2);//now quotes removed          
+				firstWord=commandParsed.substr(1,sz2-2);//now quotes removed          
 				argString= command.substr(sz2+1);
 				
-		
 			}    
 			charArgs.push_back(const_cast<char*>(firstWord.c_str()));
 			unquotedArgs= parseInterface.getSpecialArg(argString,escapedList);
@@ -838,10 +869,7 @@ class Shell
 				charArgs.push_back(const_cast<char*>(wd.c_str())); 
 			}
 			charArgs.push_back(nullptr);   
-			executionInterface.executeCommandFileRedir(firstWord,charArgs,parseInterface,pathChecker.detectedExecutableFlag);
-		
-		
-			
+			executionInterface.executeCommandFileRedir(firstWord,charArgs,parseInterface,pathChecker.detectedExecutableFlag);	
 	
 		}
 		else
@@ -861,10 +889,9 @@ class Shell
 		
 		while(true)
 	  	{
-			//cout<<"$ ";
-			// use readline for autocompletion
-			string input=this->autoC.getInput();
-	    	
+			// uses readline for input and autocompletion
+			this->pathChecker.updateExecutablesInPath();
+			string input=this->autoC.getInput();	
 	    	handleInput(input); 
 		}
 		
@@ -880,13 +907,14 @@ int main() {
 		parser parserObject= parser();
 		executer executionObject=executer();
 		pathCheck pathResolver= pathCheck();
+		pathResolver.updatePathStringList();
 		builtIn builtInPerformer= builtIn();
 		completer autoCompletionInterface=completer();
 		Shell shell=  Shell(parserObject,executionObject,pathResolver,builtInPerformer,autoCompletionInterface);
 		shell.run();
 	
  	}
- 	catch(exception e)
+ 	catch(runtime_error e)
  	{
  		cout<<e.what();
  	}
