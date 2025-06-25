@@ -1,3 +1,4 @@
+//to check echo "script  world"  "shell""hello"
 #include<iostream>
 #include<cstdlib>
 #include<sstream>
@@ -18,7 +19,8 @@ using namespace std;
 
 set<string>builtInList={"cd","type","pwd","exit","echo"};
 set<string>executableList;
-//for using autocompletion primitives while taking input
+//use autocompletion primitives while taking input
+
 class completer
 {
 	public:
@@ -260,6 +262,7 @@ class parser
 				string opFilePath;
 				try
 				{
+					/* code */
 					pipeSep>>opFilePath;
 					this->outputPath=opFilePath; //until input redirection needs to be supported this should be the output file path
 				}
@@ -275,6 +278,8 @@ class parser
 				string opFilePath;
 				try
 				{
+					/* code */
+					
 					pipeSep>>opFilePath;
 					this->outputPath=opFilePath; //until input redirection needs to be supported this should be the output file path
 				}
@@ -286,11 +291,14 @@ class parser
 			}
 			if(token=="2>")
 			{
+				
 				// need to skip operator and file name to avoid being sent in command arguments.
+				
 				this->stdErrRedirectionStatus=WRITE_OPTION;
 				string stdErrFile;
 				pipeSep>>stdErrFile;
 				this->stdErrPath=stdErrFile;
+
 			}
 			else if(token=="2>>")
 			{
@@ -342,9 +350,7 @@ class parser
 	/*separate the single quoted arguments apart from executable or command name, and remove the quotation characters 
 	as well as  store indexes of escaped characters in the list of separated arguments for echo command 
 	String withing Double quotes or single quotes : preserve spaces and escapes
-	For backslash within double quotes, remove the backslash and preserve next character within double quotes if the next character is 
-	a backtick `  ; a dollar $ or another double quote " or another backslash '\'
-	For backslash outside double quotes ,remove the backslash and preserve next character
+	
 	*/
 	vector<string> processParameters(string singleCommandString,set<int>&escapedList)
 	{
@@ -380,9 +386,16 @@ class parser
 					singleQuoteStart=false;
 					unquotedArgs.push_back(newArg); //A double quote pair is complete
 					contiguousQuotedNums.insert(argNum);// found a word enclosed within double quotes
+// cout<<"inserted"<<argNum<<"\n";
+ //cout<<"A"<<newArg<<argNum<<")\n";
+
+					
 					if(pos+1<sz and singleCommandString[pos+1]!=' ')//if next character not a space then put in set to avoid adding space in echo
 					 	escapedList.insert(argNum);
 					argNum++;      
+					
+					
+					
 				}
 				else if(singleCommandString[pos]=='\\')//backslash within double quotes
 				{
@@ -394,6 +407,8 @@ class parser
 						{
 							newArg=singleCommandString.substr(lastDoubleQuoteStart+1,((pos-1)-(lastDoubleQuoteStart+1)+1));
 							unquotedArgs.push_back(newArg);
+							
+//cout<<"B"<<newArg<<argNum<<")\n";
 							argNum++;
 							doubleQuoteStart=false;
 						}
@@ -420,6 +435,8 @@ class parser
 					
 					if(newArg!="" and !( pos>0 and (singleCommandString[pos-1]==' ' or singleCommandString[pos-1]=='\"'))) /*dont add empty string and avoid adding the same term again if previous character is space*/ 
 					{
+//cout<<"C"<<newArg<<argNum<<")\n";
+
 						unquotedArgs.push_back(newArg); //an unqouted word appearing before double quote is complete
 						argNum++;
 					}
@@ -446,11 +463,19 @@ class parser
 						}
 						else
 						{
+//cout<<"empty word"<<argNum<<"\n";
 							if(singleCommandString[pos-1]!= ' '  and pos+1<sz and  singleCommandString[pos+1]!=' ')
 							{
 								escapedList.insert(argNum-1);
+//cout<<argNum-1<<"added to escapedList\n";
 							}
 						}
+						
+// cout<<"inserted"<<argNum<<"\n";
+ //cout<<"D"<<newArg<<argNum<<")\n";
+
+						
+
 						
 					} 
 					else if(singleCommandString[pos]!='\'' )
@@ -471,6 +496,8 @@ class parser
 								newArg=singleCommandString.substr(lastWordStart,((pos-1)-lastWordStart+1));
 								unquotedArgs.push_back(newArg);
 								escapedList.insert(argNum);
+//cout<<"E"<<newArg<<argNum<<")\n";
+
 								argNum++;
 							}
 							
@@ -479,8 +506,14 @@ class parser
 							newArg=singleCommandString.substr(pos+1,1);
 							pos+=1;
 							unquotedArgs.push_back(newArg);
+//cout<<"F"<<newArg<<argNum<<")\n";
+
 							escapedList.insert(argNum);
+
+
 							lastWordStart=pos+1;
+//cout<<"G"<<newArg<<argNum<<")\n";
+
 							argNum++;
 							
 						}
@@ -495,6 +528,7 @@ class parser
 							if(newArg!="")
 							{
 								unquotedArgs.push_back(newArg);
+//cout<<"GH"<<newArg<<argNum<<")\n";							
 								argNum++;
 							}
 							
@@ -505,7 +539,12 @@ class parser
 						if(contiguousQuotedNums.find(argNum-1)!=contiguousQuotedNums.end() and singleCommandString[pos-1]==' ')
 						{
 							contiguousQuotedNums.erase(argNum-1); 
+//cout<<"removed"<<argNum-1<<"\n";
+//cout<<"found";
 						}
+						
+						
+						
 					
 					}
 					else if( singleCommandString[pos]==' ' and notWithinQuotes==false )
@@ -517,6 +556,8 @@ class parser
 					else if(singleCommandString[pos]==' ' and notWithinQuotes==true and singleCommandString[pos-1]!='\'' and singleCommandString[pos-1]!='\"' and singleCommandString[pos-1]!=' ')
 					{
 						newArg=singleCommandString.substr(lastWordStart,((pos-1)-lastWordStart+1));// an unqouted word appearing before space is complete
+//cout<<"H"<<notWithinQuotes<<doubleQuoteStart<<newArg<<argNum<<")\n";
+
 						unquotedArgs.push_back(newArg);
 						argNum++;
 						
@@ -525,12 +566,15 @@ class parser
 					{
 						if(pos>0 and singleCommandString[pos-1]==' ')
 							lastWordStart=pos;
+						
+						
 					}
 					else if(singleCommandString[pos]!=' ' and notWithinQuotes==true)
 					{
 						if(singleCommandString[pos-1]=='\"' or singleCommandString[pos-1]=='\'' or singleCommandString[pos-1]==' ')
 						{
 							lastWordStart=pos;
+//cout<<"changedLastWorsdStartto"<<pos<<"\n";
 						}
 					}
 				}      
@@ -541,6 +585,7 @@ class parser
 		if(singleCommandString[sz-1]!='\'' and singleCommandString[sz-1]!=' ' and singleCommandString[sz-1]!='\"' and notWithinQuotes==true)
 		{
 			newArg=singleCommandString.substr(lastWordStart,((sz-1)-lastWordStart+1)); //an unqoted word appearing at the end is complete
+//cout<<"I"<<newArg<<argNum<<")\n";
 			unquotedArgs.push_back(newArg);
 			argNum++;
 		}
@@ -548,20 +593,30 @@ class parser
 		else if((singleCommandString[sz-1]=='\'' or singleCommandString[sz-1]==' ' or singleCommandString[sz-1]=='\"') and singleCommandString.at(sz-1)=='\\' and notWithinQuotes==true)
 		{
 			newArg=singleCommandString.substr(lastWordStart,((sz-1)-lastWordStart+1)); //an unqoted word appearing at the end is complete
+//cout<<"J"<<newArg<<argNum<<")\n";
+
 			unquotedArgs.push_back(newArg);
 			argNum++;
 		}
 		
 		vector<string>quotedMerged;
 		int quotedargCount=unquotedArgs.size();
+//cout<<quotedargCount<<"isquotedARgCount\n";
+// for(int val:escapedList)
+// {
+// 	cout<<val<<"\t";
+// }
+// cout<<"\n";
 		for(int agNum=0;agNum<quotedargCount;agNum++)
 		{
+//cout<<agNum<<"isAgNum\n";
 			//join two arguments at agNum and agNum+1 th position separated only by quotes (without any space or character)
 			if(contiguousQuotedNums.find(agNum)!=contiguousQuotedNums.end())
 			{
 				if(contiguousQuotedNums.find(agNum+1)!=contiguousQuotedNums.end() )
 				{
 					unquotedArgs[agNum+1]=unquotedArgs[agNum]+unquotedArgs[agNum+1];
+//cout<<"found pair"<<agNum<<" "<<agNum+1<<" "<<unquotedArgs[agNum]<<"\n";
 					// modify set by assigning a new set to avoid errors due to undefined behavior
 					//modifying the same set while iterating it in for loop will cause segmentation fault due to undefined behavior 
 					set<int> newEscapedList;
@@ -576,12 +631,14 @@ class parser
 				}
 				else
 				{
+//cout<<"(A"<<unquotedArgs[agNum]<<agNum<<")\n";
 					quotedMerged.push_back(unquotedArgs[agNum]);        
 				}
 			}
 			
 			else
 			{
+//cout<<"(B"<<unquotedArgs[agNum]<<agNum<<")\n";
 				quotedMerged.push_back(unquotedArgs[agNum]);      
 			}
 
@@ -833,6 +890,9 @@ class executer
 			tempOut=dup(STDOUT_FILENO);
 			status=dup2(outputFDD,STDOUT_FILENO);
 			close(outputFDD);
+			// if(status<0)
+			// 	perror("dup2 outputRedirect");
+			
 			
 		}
 		else if(opRedirectStatus==APPEND_OPTION)
@@ -841,6 +901,9 @@ class executer
 			tempOut=dup(STDOUT_FILENO);
 			status=dup2(outputFDD,STDOUT_FILENO);
 			close(outputFDD);
+			// if(status<0)
+			// 	perror("dup2 outputRedirect append");
+			
 			
 		}
 		else if(opRedirectStatus!= NO_OPTION)
@@ -853,6 +916,9 @@ class executer
 			tempError=dup(STDERR_FILENO);
 			status2=dup2(errorFileFD,STDERR_FILENO);
 			close(errorFileFD);
+			// if(status<0)
+			// 	perror("stderr Redirect");
+			
 			
 		}	
 		else if(stdRedirectStatus==APPEND_OPTION)
@@ -861,6 +927,8 @@ class executer
 			tempError=dup(STDERR_FILENO);
 			status2=dup2(errorFileFD,STDERR_FILENO);
 			close(errorFileFD);
+			// if(status2<0)
+			// 	perror("stderr Redirect append");
 			
 		}
 		else if(stdRedirectStatus!=NO_OPTION)
@@ -873,6 +941,9 @@ class executer
 		{
 			/* redirect write end of pipe of child to put output in file instead of STDOUT*/
 			//replace write end file descriptor of this process with STDOUT
+
+			
+			
 			//execute system command
 			int result = execvp(mainCommand.c_str(), argList.data());
 			if(result<0)
@@ -929,6 +1000,11 @@ class executer
 			// set stdout to write end of pipe
 			dup2(fds[1],STDOUT_FILENO);
 			close(fds[1]);
+// Before calling execvp, add this in your child processes:
+// for(int i = 0; argLists[0][i] != nullptr; i++) {
+//     cerr << "Command 0 arg[" << i << "]: '" << argLists[0][i] << "'" << endl;
+// }
+
 			execvp(mainCommands[0].c_str(),argLists[0].data());
 			//in case of successful execution it should not return 
 			perror("fail in process0 exec");
@@ -987,6 +1063,8 @@ class executer
 				throw runtime_error("Invalid stderr Redirection Status detected on line number"+std::to_string(__LINE__));
 			}
 			
+
+
 			// set stdin to read end of pipe
 			dup2(fds[0],STDIN_FILENO);
 			close(fds[0]);
@@ -1147,14 +1225,19 @@ class Shell
 		else
 		{
 			string commandNew=commands[0];
+
+
 			//past implementation: separates main command, arguments and quoting , then executes command with redirection
 			//new : separate into pipes, do separation of main command , arguments and quoting for each command in pipeline, execute commands in loop
+
 			ss.clear();
 			ss.str("");
 			ss<<commandNew;
 			ss>>firstWord;
 			ss>>arg2;
 			//not builtin
+			
+
 			vector<string>unquotedArgs;
 			if(builtInList.find(firstWord)==builtInList.end())
 			{

@@ -1,0 +1,32 @@
+$ cat '/tmp/bar/"f 81"' '/tmp/bar/"f\26"' '/tmp/bar/f3'
+[your-program] raspberry orange.grape pear.pear grape.
+[your-program] cat: cat '/tmp/bar/"f 81"' '/tmp/bar/"f\26"' '/tmp/bar/f3': No such file or directory
+[tester::#GU3] ^ Expected prompt ("$ ") but received "cat: cat '/tmp/bar/\"f 81\"' '/tmp/bar/\"f\\26\"' '/tmp/bar/f3': No such file or directory"
+[your-program] $ 
+
+
+ $ echo "script  world"  "shell""hello"
+[your-program] script  world "script  world"  shell"script  world"  "shell"hello
+[tester::#TG6] ^ Line does not match expected value.
+[tester::#TG6] Expected: "script  world shellhello"
+[tester::#TG6] Received: "script  world "script  world"  shell"script  world"  "shell"hello"
+
+
+ $ echo 'shell     script' 'test''example' hello''world
+[your-program] shell     script test example  world
+[tester::#NI6] ^ Line does not match expected value.
+[tester::#NI6] Expected: "shell     script testexample helloworld"
+[tester::#NI6] Received: "shell     script test example  world"
+
+ $ echo world\ \ \ \ \ \ example
+[your-program] world           example
+[tester::#YT5] ^ Line does not match expected value.
+[tester::#YT5] Expected: "world      example"
+[tester::#YT5] Received: "world           example"
+
+
+echo example\nscript
+[your-program] examplennscript
+[tester::#YT5] ^ Line does not match expected value.
+[tester::#YT5] Expected: "examplenscript"
+[tester::#YT5] Received: "examplennscript"
